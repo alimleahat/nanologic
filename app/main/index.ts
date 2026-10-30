@@ -10,6 +10,7 @@ import { PROJECT_EXTENSION, type ExportLevel, type NanoLogicProject } from '../s
 import { generateExport } from '../shared/quartusExport';
 import type { AnalysisResult, SimulationResult } from '../shared/toolTypes';
 import { copyTree, createNewProject, exists, importFolder, openProjectFile, RecentProjects, saveProjectFile, scanImport, writeFileAtomic } from './projectFs';
+import { writeExport } from './exportFs';
 import { ToolClient, workerPath } from './toolClient';
 import { toPosix } from './toolchain/sources';
 import type { BoardNetlist } from './toolchain/boardNetlist';
@@ -33,7 +34,6 @@ function createWindow() {
     minHeight: 640,
     title: 'NanoLogic',
     backgroundColor: '#ffffff',
-    show: !isE2E || process.env.NANOLOGIC_SHOW === '1',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
@@ -42,7 +42,14 @@ function createWindow() {
     },
   });
   const devUrl = process.env.NANOLOGIC_DEV_URL;
-  if (devUrl) void mainWindow.loadURL(devUrl);
+  if (devUrl) {
+    // Development: show renderer problems in the terminal that ran `npm run dev`.
+    mainWindow.webContents.on('did-finish-load', () => console.log(`[nanologic] renderer loaded from ${devUrl}`));
+    mainWindow.webContents.on('console-message', (e) => {
+      if (e.level === 'error') console.error(`[renderer] ${e.message}`);
+    });
+    void mainWindow.loadURL(devUrl);
+  }
   else void mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);
@@ -172,8 +179,7 @@ async function exportQuartus(projectDir: string, project: NanoLogicProject, leve
     date: new Date(),
   });
   const folder = path.join(destFolder, out.folderName);
-  await fs.mkdir(folder, { recursive: true });
-  for (const f of out.files) await writeFileAtomic(path.join(folder, ...f.path.split('/')), f.content);
+  await writeExport(folder, out.files);
   messages.push(...out.messages);
   messages.push({ severity: 'info', text: `Exported ${out.files.length} files to ${folder}`, source: 'export' });
   return { ok: !messages.some((m) => m.severity === 'error'), folder, files: out.files.map((f) => f.path), messages };

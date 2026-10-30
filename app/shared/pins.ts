@@ -108,7 +108,10 @@ export function validatePins(ports: TopPort[], list: PinAssignment[], board: Boa
   }
 
   for (const p of ports) {
-    const mine = list.filter((a) => a.port === p.name && findBoardBit(board, a.board));
+    const indices = portBitIndices(p);
+    const mine = list.filter(
+      (a) => a.port === p.name && findBoardBit(board, a.board) && (a.bit === null ? p.scalar : indices.includes(a.bit)),
+    );
     if (mine.length === 0) {
       add('warning', `Port "${p.name}" (${p.direction}${p.width > 1 ? `, ${p.width} bits` : ''}) is not mapped to a pin.`);
       continue;

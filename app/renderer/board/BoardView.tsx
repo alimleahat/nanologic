@@ -157,6 +157,7 @@ export function BoardView() {
   const report = board.report;
   const bypass = project.project.virtualBoard.bypass;
   const assignments = project.project.pinAssignments;
+  const clockBypass = bypass.filter((b) => b.mode === 'clock').map((b) => b.net);
 
   const mappedTo = (groupName: string) => {
     const ports = new Set(assignments.filter((a) => a.board.startsWith(groupName)).map((a) => a.port));
@@ -211,8 +212,12 @@ export function BoardView() {
         <div className="toolbar-sep" />
         <span className="secondary" data-testid="board-clock-info" style={{ fontSize: 'var(--font-size-sm)' }}>
           {board.started
-            ? `${running ? `Running at ${formatHz(st?.actualHz ?? 0)}` : 'Paused'} · real board: ${formatHz(clockHz)}${
-                running && st?.actualHz ? ` (${Math.max(1, Math.round(clockHz / Math.max(st.actualHz, 1e-9))).toLocaleString()}× slower)` : ''
+            ? `${running ? `Running at ${formatHz(st?.actualHz ?? 0)}` : 'Paused'} · ${
+                clockBypass.length
+                  ? `the board clock drives ${clockBypass.join(', ')} directly (bypass)`
+                  : `real board: ${formatHz(clockHz)}${
+                      running && st?.actualHz ? ` (${Math.max(1, Math.round(clockHz / Math.max(st.actualHz, 1e-9))).toLocaleString()}× slower)` : ''
+                    }`
               } · ${st?.cycles.toLocaleString() ?? 0} cycles`
             : 'Press Start to build the design and run it on the virtual board.'}
         </span>

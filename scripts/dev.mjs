@@ -14,7 +14,8 @@ const builder = spawn(process.execPath, [path.join(root, 'scripts/build-main.mjs
 await new Promise((resolve, reject) => builder.on('exit', (code) => (code === 0 ? resolve() : reject(new Error('build failed')))));
 
 const electronPath = (await import('electron')).default;
-const app = spawn(electronPath, [root], {
+// Extra arguments are passed to Electron (e.g. --no-sandbox on Linux as root).
+const app = spawn(electronPath, [root, ...process.argv.slice(2)], {
   stdio: 'inherit',
   env: { ...process.env, NANOLOGIC_DEV_URL: url },
 });

@@ -16,6 +16,7 @@ const AXIS_H = 24;
 let rowKey = 1;
 
 export function formatTime(t: number, secondsPerUnit: number): string {
+  if (t === 0) return '0';
   const s = t * secondsPerUnit;
   const abs = Math.abs(s);
   const units: [number, string][] = [
