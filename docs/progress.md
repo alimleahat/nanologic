@@ -8,7 +8,7 @@ All seven milestones (M0 to M6) are implemented. Everything in the demo (spec se
 
 - Pull request (keep it open, do not merge): https://github.com/alimleahat/nanologic/pull/1 (`dev` → `main`). The macOS and Windows CI jobs run on it.
 - Screenshots of every screen: on any CI run's page, under **Artifacts**, download `screenshots-linux` (also `screenshots-macos-latest` and `screenshots-windows-latest` from the PR runs).
-- Installers: start **Actions > CI > Run workflow** on the `dev` branch (tick "Also build the macOS and Windows installers"). The `.dmg` and `.exe` appear under Artifacts when it finishes.
+- Installers: open the CI run for the commit "Build installers [installers]" on GitHub (Actions tab) and download `installer-macOS` (two `.dmg` files: `arm64` for Apple Silicon, `x64` for Intel) and `installer-Windows` (`.exe`) from Artifacts (kept for 7 days). To make fresh ones: **Actions > CI > Run workflow** on `dev`, or push a commit whose message contains `[installers]`.
 
 ## Run the app on your Mac
 
@@ -89,6 +89,11 @@ To run the tests on your Mac: `npm test` (unit) and `npm run test:e2e` (opens th
 4. **Mac native menu**: the app draws its own menu bar inside the window (as in Quartus on Windows). On macOS the system menu bar only has the app, Edit and Window menus.
 5. **Analysis speed**: the first analysis in a session takes 1-2 s while Yosys loads; later runs are faster.
 6. **Not yet built**: the AI assistant panel (out of scope), VHDL (out of scope), board resources beyond switches/keys/LEDs/displays (out of scope).
+
+## Blockers hit during the session
+
+1. **Could not start CI runs by hand.** The GitHub integration used in this session is not allowed to trigger workflows (HTTP 403 "Resource not accessible by integration"), so I could not use "Run workflow" to build installers once per milestone. Workaround: the installer jobs also run for a push whose commit message contains `[installers]`; I used that once for M6. You can still use **Actions > CI > Run workflow** yourself.
+2. **No openly licensed Terasic System Builder `.qsf` found** to double-check the I/O standard spelling (see limitation 1 below).
 
 ## Things I did differently from the spec, and why
 
