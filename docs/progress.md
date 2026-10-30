@@ -50,17 +50,15 @@ To run the tests on your Mac: `npm test` (unit) and `npm run test:e2e` (opens th
 
 ## Milestones
 
-| Milestone | State | CI |
+| Milestone | State | CI (Linux, macOS, Windows) |
 |---|---|---|
-| M0 Toolchain spike | Done. See `docs/toolchain-decision.md` | Passed on Linux, macOS, Windows |
-| M1 App shell and projects | Done | Passed on Linux; macOS/Windows: see PR checks |
-| M2 Editor and analysis | Done | as above |
-| M3 Simulation and waveforms | Done | as above |
-| M4 Virtual DE10-Lite | Done | as above |
-| M5 Pins and export | Done, except the manual Quartus/hardware check (yours) | as above |
-| M6 Packaging | Done: unsigned installers build in CI on manual runs and on `main` | see the manual run |
-
-(The CI column is filled in at the end of this file once the final runs finished.)
+| M0 Toolchain spike | Done. See `docs/toolchain-decision.md` | Passed on all three |
+| M1 App shell and projects | Done | Passed on all three (unit + end-to-end) |
+| M2 Editor and analysis | Done | Passed on all three |
+| M3 Simulation and waveforms | Done | Passed on all three |
+| M4 Virtual DE10-Lite | Done | Passed on all three |
+| M5 Pins and export | Done, except the manual Quartus/hardware check, which is yours | Passed on all three |
+| M6 Packaging | Done: unsigned `.dmg` (Apple Silicon + Intel) and `.exe` built in CI, and the packaged app smoke-tested on each OS | Passed on all three |
 
 ## What works
 
@@ -113,4 +111,10 @@ To run the tests on your Mac: `npm test` (unit) and `npm run test:e2e` (opens th
 
 ## CI status at the end of the session
 
-See the bottom of this file (updated after the last push).
+All green on commit `de8cf06` ("Build installers [installers]"):
+
+- Linux (push run 15): typecheck, 45 unit tests, 6 end-to-end tests, packaged-app smoke test.
+- macOS and Windows (PR run 16): typecheck, unit tests, build, end-to-end tests.
+- Installers (push run 15): macOS `.dmg` (arm64 and x64) and Windows `.exe` built; each packaged app was started in CI and ran analysis, simulation and the virtual board on the reference project.
+
+Run pages: https://github.com/alimleahat/nanologic/actions/runs/40990787104 (Linux + installers) and https://github.com/alimleahat/nanologic/actions/runs/40990793724 (macOS/Windows). Download screenshots and installers from their Artifacts section; installers are kept for 7 days.
