@@ -396,8 +396,8 @@ function drawTrack(
     if (xe - xs < 1 && i + 1 < n) {
       const pxEnd = Math.floor(xs) + 1;
       const tEnd = t0 + pxEnd * unitsPerPx;
-      let j = i + 1;
-      while (j < n && tr.times[j] < tEnd) j++;
+      // First change at or after the end of this pixel (binary search).
+      const j = Math.max(i + 1, valueIndexAt(tr, tEnd - 1e-9) + 1);
       g.fillStyle = c.waveBus;
       g.fillRect(Math.floor(xs), yTop, Math.max(1, pxEnd - Math.floor(xs)), yBot - yTop);
       lastPx = pxEnd;

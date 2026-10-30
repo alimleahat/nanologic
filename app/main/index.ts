@@ -51,6 +51,22 @@ function createWindow() {
     void mainWindow.loadURL(devUrl);
   }
   else void mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  // The renderer blocks unload while files have unsaved changes; ask the user.
+  mainWindow.webContents.on('will-prevent-unload', (event) => {
+    if (isE2E) {
+      event.preventDefault();
+      return;
+    }
+    const choice = dialog.showMessageBoxSync(mainWindow!, {
+      type: 'warning',
+      buttons: ['Quit without saving', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+      message: 'Some files have unsaved changes.',
+      detail: 'If you quit now, your changes will be lost.',
+    });
+    if (choice === 0) event.preventDefault(); // allow the window to close
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: 'deny' };

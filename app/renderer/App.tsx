@@ -68,9 +68,17 @@ export function App() {
       }
     };
     window.addEventListener('keydown', onKey);
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (store.get().docs.some((d) => d.kind === 'editor' && d.text !== d.saved)) {
+        e.preventDefault();
+        e.returnValue = false;
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
     const offMenu = window.nanologic.onMenuCommand(() => {});
     return () => {
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('beforeunload', onBeforeUnload);
       offMenu();
     };
   }, []);
