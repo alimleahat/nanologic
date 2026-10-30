@@ -94,9 +94,8 @@ export async function closeProject(silent = false) {
 }
 
 export async function newProject(opts: NewProjectOptions) {
-  const opened = await api().newProject(opts);
-  // Map the standard DE10-Lite port names immediately.
-  await setProject(opened);
+  // Standard DE10-Lite port names are mapped after the first analysis.
+  await setProject(await api().newProject(opts));
 }
 
 export async function openProjectDialog() {

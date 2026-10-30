@@ -13,7 +13,7 @@ export function PinAssignments() {
   const board = useMemo(() => (project ? getBoard(project.project.boardId) : undefined), [project?.project.boardId]);
   if (!project || !board) return <div className="empty">Open a project first.</div>;
   const list = project.project.pinAssignments;
-  const bits = listBoardBits(board).filter((b) => b.group.kind !== 'clock' || b.group.virtual || true);
+  const bits = listBoardBits(board);
   const issues = validatePins(ports, list, board);
 
   const save = (next: typeof list) => void updateProject((p) => ({ ...p, pinAssignments: sortAssignments(next, ports) }));

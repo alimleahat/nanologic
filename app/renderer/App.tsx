@@ -75,11 +75,9 @@ export function App() {
       }
     };
     window.addEventListener('beforeunload', onBeforeUnload);
-    const offMenu = window.nanologic.onMenuCommand(() => {});
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      offMenu();
     };
   }, []);
 
