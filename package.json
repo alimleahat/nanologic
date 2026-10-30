@@ -27,6 +27,8 @@
     "@yowasp/yosys": "0.70.1258"
   },
   "devDependencies": {
+    "@fontsource/inter": "5.2.8",
+    "@fontsource/jetbrains-mono": "5.2.8",
     "@monaco-editor/react": "4.7.0",
     "@playwright/test": "1.56.1",
     "@types/node": "22.20.5",
