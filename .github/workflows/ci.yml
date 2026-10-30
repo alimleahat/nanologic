@@ -3,7 +3,8 @@ name: CI
 # Linux checks run on every push. macOS and Windows jobs cost more minutes on a
 # private repository, so they only run on pull requests (the long-lived
 # dev -> main PR), on pushes to main and when started by hand from the Actions
-# tab (Run workflow). Installers are only built on main and by hand.
+# tab (Run workflow). Installers are built on main, by hand, and for commits
+# whose message contains [installers].
 on:
   push:
   pull_request:
@@ -86,10 +87,14 @@ jobs:
           path: test-results/
           retention-days: 14
 
+  # Also built for a push whose commit message contains [installers], so they
+  # can be produced once per milestone without running on every push.
   installers:
     name: ${{ matrix.os }} installer
-    needs: desktop
-    if: (github.event_name == 'workflow_dispatch' && inputs.installers) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.installers) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[installers]'))
     strategy:
       fail-fast: false
       matrix:

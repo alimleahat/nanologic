@@ -85,7 +85,7 @@ npm run dist:win
 
 The installers are not signed yet. On a Mac, the first time you open an unsigned app, right-click it in Applications and choose **Open**. If macOS says the app "is damaged", run `xattr -cr /Applications/NanoLogic.app` once in Terminal.
 
-CI (GitHub Actions) also builds both installers when you start the workflow by hand: on GitHub, go to **Actions > CI > Run workflow**. The installers appear under "Artifacts" on the run's page.
+CI (GitHub Actions) also builds both installers when you start the workflow by hand (on GitHub: **Actions > CI > Run workflow**), on every push to `main`, and for any push whose commit message contains `[installers]`. The installers appear under "Artifacts" on the run's page.
 
 ## Regenerate the example Quartus export
 
@@ -113,4 +113,4 @@ npm run examples:export
 
 - Every push: Linux typecheck, unit tests, end-to-end tests, a packaged-app smoke test and screenshots (download them from the run's "Artifacts").
 - The open pull request from `dev` to `main`, pushes to `main`, and manual runs: the same checks on macOS and Windows.
-- Manual runs and pushes to `main`: unsigned macOS and Windows installers.
+- Manual runs, pushes to `main` and commits with `[installers]` in the message: unsigned macOS and Windows installers.
