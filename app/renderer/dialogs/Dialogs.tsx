@@ -1,16 +1,18 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { ExportResult, ImportScan } from '@shared/api';
-import { getBoard } from '@shared/board';
+import { BOARDS, boardLabel, getBoard } from '@shared/board';
 import { isValidName, type ExportLevel } from '@shared/project';
 import {
   createNewFile,
-  exportToQuartus,
+  changeBoard,
+  exportProject,
   importFolder,
   newProject,
   openDialog,
   reportError,
   runSimulation,
 } from '../state/actions';
+import { useBoard } from '../state/boardHooks';
 import { useStore } from '../state/store';
 
 function Dialog({ title, children, footer, wide, testId }: { title: string; children: ReactNode; footer: ReactNode; wide?: boolean; testId: string }) {
@@ -46,7 +48,8 @@ function NewProjectWizard() {
   const [top, setTop] = useState('top');
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const board = getBoard('de10-lite');
+  const [boardId, setBoardId] = useState('de10-lite');
+  const board = getBoard(boardId);
 
   useEffect(() => {
     void window.nanologic.defaultProjectsFolder().then((f) => setFolder((cur) => cur || f));
@@ -125,24 +128,18 @@ function NewProjectWizard() {
             </div>
           </>
         )}
-        {step === 1 && (
-          <div className="field">
-            <label>Board</label>
-            <select className="select" value={board.id} disabled>
-              <option value={board.id}>{board.name}</option>
-            </select>
-            <span className="secondary">
-              {board.family} device {board.device}. Pin locations come from the {board.name} User Manual.
-            </span>
-          </div>
-        )}
+        {step === 1 && <BoardPicker boardId={boardId} onChange={setBoardId} />}
         {step === 2 && (
           <div className="field">
             <label htmlFor="np-top">Top-level entity (module name)</label>
             <input id="np-top" className="input mono" value={top} onChange={(e) => setTop(e.target.value)} data-testid="wizard-top" />
             <span className="secondary">
-              NanoLogic creates <span className="mono">{top}.v</span> with the standard DE10-Lite port names (MAX10_CLK1_50, KEY, SW, LEDR, HEX0-HEX5), so the
-              pins are mapped automatically.
+              NanoLogic creates <span className="mono">{top}.v</span> with the standard {board.name} port names (
+              {board.groups
+                .filter((g) => g.virtual)
+                .map((g) => g.name)
+                .join(', ')}
+              ), so the pins are mapped automatically.
             </span>
           </div>
         )}
@@ -163,8 +160,8 @@ function NewProjectWizard() {
               </tr>
               <tr>
                 <td>Board</td>
-                <td>
-                  {board.name} ({board.device})
+                <td data-testid="wizard-summary-board">
+                  {boardLabel(board)}, {board.device}
                 </td>
               </tr>
               <tr>
@@ -173,6 +170,81 @@ function NewProjectWizard() {
               </tr>
             </tbody>
           </table>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
+function BoardPicker({ boardId, onChange }: { boardId: string; onChange: (id: string) => void }) {
+  const board = getBoard(boardId);
+  return (
+    <div className="field">
+      <label htmlFor="board-picker">Board</label>
+      <select id="board-picker" className="select" value={boardId} onChange={(e) => onChange(e.target.value)} data-testid="board-picker">
+        {BOARDS.map((b) => (
+          <option key={b.id} value={b.id}>
+            {boardLabel(b)}
+          </option>
+        ))}
+      </select>
+      <span className="secondary">
+        {board.family} device {board.device}. Pin locations come from {board.source}. Export goes to{' '}
+        {board.toolchain === 'vivado' ? 'Xilinx Vivado' : 'Intel Quartus Prime Lite 17.1'}.
+      </span>
+      {board.statusNote && (
+        <div className="notice warning" style={{ marginTop: 8 }} data-testid="board-experimental">
+          <strong>{board.statusNote}.</strong> The pin data comes from the vendor&apos;s files, but nothing has been tested on a real {board.name} yet.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectSettingsDialog() {
+  const project = useStore((s) => s.project);
+  const [boardId, setBoardId] = useState(project?.project.boardId ?? 'de10-lite');
+  const [busy, setBusy] = useState(false);
+  if (!project) return null;
+  const changed = boardId !== project.project.boardId;
+  return (
+    <Dialog
+      title="Project Settings"
+      testId="dialog-settings"
+      footer={
+        <>
+          <button className="btn" onClick={() => openDialog(undefined)}>
+            Cancel
+          </button>
+          <button
+            className="btn primary"
+            disabled={busy}
+            data-testid="settings-ok"
+            onClick={async () => {
+              if (changed) {
+                if (
+                  project.project.pinAssignments.length &&
+                  !window.confirm('Changing the board clears the pin assignments (they belong to the old board). Continue?')
+                )
+                  return;
+                setBusy(true);
+                await changeBoard(boardId);
+              }
+              openDialog(undefined);
+            }}
+          >
+            OK
+          </button>
+        </>
+      }
+    >
+      <div className="dialog-body">
+        <BoardPicker boardId={boardId} onChange={setBoardId} />
+        {changed && (
+          <div className="notice" style={{ marginTop: 8 }}>
+            Pin assignments are cleared and the standard {getBoard(boardId).name} port names are mapped again after the next analysis. Your Verilog files are not
+            changed.
+          </div>
         )}
       </div>
     </Dialog>
@@ -389,6 +461,8 @@ function SimulateDialog() {
 
 function ExportDialog() {
   const project = useStore((s) => s.project);
+  const board = useBoard();
+  const vivado = board?.toolchain === 'vivado';
   const [level, setLevel] = useState<ExportLevel>(project?.project.exportLevel ?? 3);
   const [dest, setDest] = useState(project?.dir ?? '');
   const [busy, setBusy] = useState(false);
@@ -396,11 +470,13 @@ function ExportDialog() {
   const levels: [ExportLevel, string, string][] = [
     [1, 'Sources only', 'Your design files (testbenches are left out).'],
     [2, 'Sources and pin reference', 'Design files plus a pin table (Markdown and CSV) to enter in the Pin Planner by hand.'],
-    [3, 'Full Quartus project', '.qpf, .qsf (device, top level, files, pins, I/O standards), .sdc and sources. Ready to compile.'],
+    vivado
+      ? [3, 'Full Vivado project', 'An .xdc with the mapped pins (and the 100 MHz clock), a create_project.tcl that builds the Vivado project, and sources.']
+      : [3, 'Full Quartus project', '.qpf, .qsf (device, top level, files, pins, I/O standards), .sdc and sources. Ready to compile.'],
   ];
   return (
     <Dialog
-      title="Export to Quartus"
+      title={vivado ? 'Export to Vivado' : 'Export to Quartus'}
       testId="dialog-export"
       footer={
         <>
@@ -419,7 +495,7 @@ function ExportDialog() {
             onClick={async () => {
               setBusy(true);
               try {
-                setResult(await exportToQuartus(level, dest));
+                setResult(await exportProject(level, dest));
               } catch (e) {
                 reportError('export', e);
               } finally {
@@ -447,7 +523,9 @@ function ExportDialog() {
           </label>
         ))}
         <div className="field" style={{ marginTop: 8 }}>
-          <label>Export into (a folder named {project?.project.name}_quartus is created here)</label>
+          <label>
+            Export into (a folder named {project?.project.name}_{vivado ? 'vivado' : 'quartus'} is created here)
+          </label>
           <div className="row">
             <input className="input mono" style={{ flex: 1 }} value={dest} onChange={(e) => setDest(e.target.value)} data-testid="export-dest" />
             <button
@@ -465,8 +543,18 @@ function ExportDialog() {
           <div className={`notice ${result.ok ? '' : 'error'}`} data-testid="export-result">
             {result.ok ? (
               <>
-                <strong className="success-text">Exported.</strong> In Quartus Prime Lite 17.1 use File &gt; Open Project and choose{' '}
-                <span className="mono">{project?.project.name}.qpf</span> in <span className="mono">{result.folder}</span>.
+                <strong className="success-text">Exported.</strong>{' '}
+                {vivado ? (
+                  <>
+                    In Vivado use Tools &gt; Run Tcl Script and choose <span className="mono">create_project.tcl</span> in{' '}
+                    <span className="mono">{result.folder}</span>. {board?.statusNote ? `(${board.statusNote}.)` : ''}
+                  </>
+                ) : (
+                  <>
+                    In Quartus Prime Lite 17.1 use File &gt; Open Project and choose <span className="mono">{project?.project.name}.qpf</span> in{' '}
+                    <span className="mono">{result.folder}</span>.
+                  </>
+                )}
                 <div className="secondary mono" style={{ marginTop: 6 }}>
                   {result.files.join('  ')}
                 </div>
@@ -563,7 +651,9 @@ function AboutDialog() {
           Includes Yosys (ISC licence) and Icarus Verilog (GNU GPL v2 or later), both compiled to WebAssembly and run as separate programs. Source code
           for Icarus Verilog is available from the location given in the licence notes shipped with the app.
         </p>
-        <p className="secondary">Not affiliated with Intel or Terasic. Quartus is a trademark of Intel Corporation.</p>
+        <p className="secondary">
+          Not affiliated with Intel, Terasic, AMD/Xilinx or Digilent. Quartus is a trademark of Intel Corporation; Vivado is a trademark of AMD.
+        </p>
       </div>
     </Dialog>
   );
@@ -584,6 +674,8 @@ export function Dialogs() {
       return <NewFileDialog />;
     case 'about':
       return <AboutDialog />;
+    case 'settings':
+      return <ProjectSettingsDialog />;
     default:
       return null;
   }

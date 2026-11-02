@@ -1,10 +1,12 @@
 import { openDialog, openProjectDialog, runAnalysis, saveDoc, startBoard } from '../state/actions';
+import { useExportTool } from '../state/boardHooks';
 import { useStore } from '../state/store';
 
 export function Toolbar() {
   const hasProject = useStore((s) => !!s.project);
   const editorActive = useStore((s) => s.docs.find((d) => d.id === s.active)?.kind === 'editor');
   const tasks = useStore((s) => s.tasks);
+  const tool = useExportTool();
   return (
     <div className="toolbar" role="toolbar">
       <button className="btn ghost" data-testid="tb-new" onClick={() => openDialog('newProject')}>
@@ -28,7 +30,7 @@ export function Toolbar() {
       </button>
       <div className="toolbar-sep" />
       <button className="btn" data-testid="tb-export" disabled={!hasProject} onClick={() => openDialog('export')}>
-        Export to Quartus
+        Export to {tool}
       </button>
     </div>
   );

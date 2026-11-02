@@ -8,7 +8,9 @@ export function Welcome() {
   return (
     <div className="welcome" data-testid="welcome">
       <h1>NanoLogic</h1>
-      <div className="secondary">Write Verilog, simulate it, try it on a virtual DE10-Lite, then export to Quartus Prime Lite 17.1.</div>
+      <div className="secondary">
+        Write Verilog, simulate it, try it on a virtual DE10-Lite or Basys 3 (experimental), then export to Quartus Prime Lite 17.1 or Vivado.
+      </div>
 
       {project && (
         <div className="notice" style={{ marginTop: 16 }}>
@@ -20,7 +22,7 @@ export function Welcome() {
       <div className="card-grid">
         <button className="card" onClick={() => openDialog('newProject')} data-testid="welcome-new">
           <div className="title">New project</div>
-          <div className="desc">Create a DE10-Lite project with a starter top-level file.</div>
+          <div className="desc">Create a DE10-Lite or Basys 3 project with a starter top-level file.</div>
         </button>
         <button className="card" onClick={() => void openProjectDialog()}>
           <div className="title">Open project</div>
@@ -57,11 +59,11 @@ export function Welcome() {
 
       <h2>The usual flow</h2>
       <ol className="secondary" style={{ lineHeight: 1.7, paddingLeft: 18 }}>
-        <li>Write your design. Port names like SW, KEY, LEDR and HEX0 are connected to the board automatically.</li>
+        <li>Write your design. The board&apos;s own port names (SW, KEY, LEDR, HEX0 on the DE10-Lite; sw, btnC, led, seg, an on the Basys 3) are connected automatically.</li>
         <li>Processing &gt; Start Analysis (or the Analyse button). Click a message to jump to the line.</li>
         <li>Simulate a testbench and inspect the waveform.</li>
         <li>Run Board: flip switches, press keys, watch the LEDs and displays.</li>
-        <li>Assignments &gt; Pin Planner for any other port names, then Export to Quartus for the lab PC.</li>
+        <li>Assignments &gt; Pin Planner for any other port names, then export to Quartus or Vivado.</li>
       </ol>
     </div>
   );

@@ -17,6 +17,7 @@ import {
   setTopLevel,
   startBoard,
 } from '../state/actions';
+import { useExportTool } from '../state/boardHooks';
 import { store, useStore } from '../state/store';
 import { scanModules } from '@shared/verilogScan';
 
@@ -40,6 +41,7 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
   const active = useStore((s) => s.active);
   const recent = useStore((s) => s.recent);
   const activeDoc = docs.find((d) => d.id === active);
+  const tool = useExportTool();
   const hasProject = !!project;
   const editorActive = activeDoc?.kind === 'editor';
 
@@ -75,7 +77,7 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
         { label: 'Save', shortcut: mod('S'), action: () => void saveDoc(), enabled: editorActive },
         { label: 'Save All', shortcut: mod('Shift+S'), action: () => void saveAll(), enabled: hasProject },
         { separator: true, label: '' },
-        { label: 'Export to Quartus...', action: () => openDialog('export'), enabled: hasProject },
+        { label: `Export to ${tool}...`, action: () => openDialog('export'), enabled: hasProject },
         ...(recent.length ? [{ separator: true, label: '' } as Entry] : []),
         ...recent.slice(0, 6).map((p, i) => ({ label: `${i + 1}  ${p.split(/[\\/]/).slice(-2).join('/')}`, action: () => void openProjectPath(p) })),
       ],
@@ -114,6 +116,8 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
           },
           enabled: editorActive && !!currentModule(),
         },
+        { label: 'Project Settings (Board)...', action: () => openDialog('settings'), enabled: hasProject, testId: 'menu-settings' },
+        { separator: true, label: '' },
         { label: 'Add Existing Files...', action: () => void addExistingFiles('design'), enabled: hasProject },
         { label: 'Add Testbench Files...', action: () => void addExistingFiles('testbench'), enabled: hasProject },
         {
@@ -137,7 +141,7 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
       [
         { label: 'Pin Planner', action: () => openSingleton('pins'), enabled: hasProject },
         { label: 'Virtual DE10-Lite', action: () => openSingleton('board'), enabled: hasProject },
-        { label: 'Export to Quartus...', action: () => openDialog('export'), enabled: hasProject },
+        { label: `Export to ${tool}...`, action: () => openDialog('export'), enabled: hasProject },
       ],
     ],
     ['Window', docs.map((d) => ({ label: `${d.id === active ? '• ' : ''}${d.title}`, action: () => activate(d.id) }))],
