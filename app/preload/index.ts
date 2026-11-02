@@ -38,7 +38,7 @@ const api: NanoLogicApi = {
     ipcRenderer.on('board:state', h);
     return () => ipcRenderer.removeListener('board:state', h);
   },
-  exportQuartus: (dir, project, level, dest) => ipcRenderer.invoke('export:quartus', dir, project, level, dest),
+  exportProject: (dir, project, level, dest) => ipcRenderer.invoke('export:project', dir, project, level, dest),
   showInFolder: (p) => ipcRenderer.send('shell:showInFolder', p),
   onMenuCommand: (cb) => {
     const h = (_e: unknown, c: string) => cb(c);

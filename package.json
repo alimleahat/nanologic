@@ -78,6 +78,10 @@
       {
         "from": "docs/licences.md",
         "to": "licences/THIRD_PARTY_LICENCES.md"
+      },
+      {
+        "from": "tests/fixtures/digilent-xdc/License.txt",
+        "to": "licences/digilent-xdc-MIT.txt"
       }
     ],
     "mac": {
