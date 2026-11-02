@@ -43,6 +43,15 @@ Everything is on the `basys3` branch (made from `dev`), with a pull request `bas
    - the decimal points stay off.
 4. Tell me anything that differs, especially polarities.
 
+### CI status
+
+All green on commit `c2ed7ad`:
+
+- Linux (push run 22): typecheck, unit tests (Basys 3 pin check, display model, Vivado export, plus all DE10-Lite tests), end-to-end tests (4 new Basys 3 tests and all DE10-Lite tests), packaged-app smoke test.
+- macOS and Windows (PR #2, run 23): typecheck, unit tests, build, end-to-end tests.
+
+Run pages: https://github.com/alimleahat/nanologic/actions/runs/41518133760 (Linux) and https://github.com/alimleahat/nanologic/actions/runs/41518143233 (macOS/Windows). Screenshots of the Basys 3 screens (`*-b3-*.png`) are in each run's Artifacts.
+
 ### Blockers
 
 - **digilent.com is blocked in the cloud session**, so I could not read the Basys 3 reference manual (see limitation 2). If you allow `digilent.com` in the environment's network settings, I can check the polarities against it.
