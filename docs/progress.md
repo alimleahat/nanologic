@@ -29,7 +29,7 @@ Everything is on the `basys3` branch (made from `dev`), with a pull request `bas
 3. **Speed**: the virtual board runs about 1.5-2 million cycles per second here, about 50× slower than the real 100 MHz. The display stays correct because persistence is measured in board time, but at Max it takes about half a second of real time to fill the 10 ms window, so the display reacts to button presses with a short lag. Designs that count at human speed from the 100 MHz clock (e.g. once a second) need the divider bypass, as on the DE10-Lite.
 4. **Only on-board I/O**: Pmod headers, VGA, USB-UART, PS/2 and the Quad SPI flash pins are in the master XDC but not in NanoLogic yet.
 5. **Buttons are not debounced on the board** as far as I know (the manual would say; I could not read it). The starter example samples `btnU` once per scan period (~2.6 ms), which should ignore normal contact bounce. Please check that one press adds exactly one.
-6. **Stretch goal (Build bitstream with openXC7)**: see "Blockers" below.
+6. **No "Build bitstream"**: the openXC7 stretch goal was stopped (see "Blockers" below). Bitstreams come from Vivado via the export.
 
 ### What to check on real hardware and in Vivado
 
@@ -46,7 +46,12 @@ Everything is on the `basys3` branch (made from `dev`), with a pull request `bas
 ### Blockers
 
 - **digilent.com is blocked in the cloud session**, so I could not read the Basys 3 reference manual (see limitation 2). If you allow `digilent.com` in the environment's network settings, I can check the polarities against it.
-- **openXC7 "Build bitstream" (stretch)**: see the note at the end of this section once checked.
+- **openXC7 "Build bitstream" (stretch goal): stopped, not built.** What I found:
+  - The network *can* fetch it. The only prebuilt openXC7 builds I found are Apio's (`fpgawars/tools-openxc7`, release `2026-09-24`): Linux x86-64, macOS Apple Silicon and Windows x64. There is **no build for Intel Macs**. Each package is about 109 MB to download (739 MB unpacked), plus a 25 MB chipdb for the xc7a35t (its SHA-256 matched the published index).
+  - The package has no Yosys, but NanoLogic's bundled WebAssembly Yosys ran `synth_xilinx -arch xc7` on the Basys 3 starter in about 24 s, so synthesis would need nothing extra.
+  - **Blocker:** running the downloaded native `nextpnr-xilinx` (and then `fasm2frames` / `xc7frames2bit`) was refused by this session's permission policy ("code from external"). I did not work around it, so place-and-route and bitstream generation are untested and I added no Build bitstream feature.
+  - Design questions for you before anyone builds this: (1) the toolchain is far too big to put in the installer (739 MB per platform), so it would have to be downloaded on first use, which breaks the "works offline" rule for this one feature; (2) Intel Macs would not be supported; (3) licences of the bundled pieces (nextpnr and prjxray are ISC, prjxray-db is CC0; the rest of the package would need checking).
+  - To unblock: allow running these binaries in the session (or run them on your machine), then I can wire up an opt-in "Build bitstream (experimental)" that downloads and checks the toolchain.
 
 ---
 
