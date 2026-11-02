@@ -1,6 +1,56 @@
 # Progress
 
-Last updated: 30 Oct 2026 (end of the first overnight session).
+Last updated: 2 Nov 2026 (Basys 3 support, branch `basys3`). The DE10-Lite notes from 30 Oct follow after the Basys 3 section.
+
+## Basys 3 support (experimental) - branch `basys3`
+
+Everything is on the `basys3` branch (made from `dev`), with a pull request `basys3` → `dev` for the macOS/Windows checks. Nothing changed for the DE10-Lite: all its tests still pass.
+
+### What works
+
+- **Board data**: `boards/basys3.json` is built from Digilent's `Basys-3-Master.xdc` (github.com/Digilent/digilent-xdc, commit `c8644a9fe31cc803789643124545d56b3bef4600`; the file last changed in `69d3501`). Device `xc7a35tcpg236-1`, 100 MHz clock on `clk` (W5), standard names `clk`, `sw[15:0]`, `led[15:0]`, `btnC/btnU/btnL/btnR/btnD`, `seg[6:0]`, `dp`, `an[3:0]`, all `LVCMOS33`. A unit test (`tests/unit/basys3.test.ts`) reads the vendored master XDC and checks every pin and I/O standard against the JSON. The XDC's configuration lines (`CONFIG_VOLTAGE 3.3`, `CFGBVS VCCO`, the SPI x4 boot settings) are carried over.
+- **Labelled experimental** everywhere it is chosen or produced: board picker ("Digilent Basys 3 (Experimental - not yet verified on hardware)"), board view, Pin Planner, and every exported file (`.xdc`, `create_project.tcl` and `pins.md` headers, plus a warning in Messages).
+- **Board picker** in the New Project Wizard and in **Project > Project Settings (Board)**. Changing the board clears the pin assignments (with a confirmation) and maps the standard names again after the analysis. New Basys 3 projects get a starter `top.v` with the master XDC's port names.
+- **Auto-mapping** uses the Basys 3 names (50 pins for a design that uses them all).
+- **Virtual Basys 3**: four-digit display on the left, 16 LEDs above 16 switches, five buttons in a cross. Buttons read 1 while held; switches 1 when up; LEDs lit at 1.
+- **Multiplexed display with persistence of vision**: at Max speed the display shows what an eye would see, averaged over the last 10 ms of *board* time (1,000,000 clock cycles), so it looks the same however fast or slow the simulator runs. A correctly scanned design shows four steady digits; segments that change late show a faint ghost on the neighbouring digit; a scan slower than ~10 ms per digit makes the digits flicker one at a time. At 1 Hz/10 Hz/1 kHz or when stepping there is no persistence to show, so the display shows the digit enabled at that instant (the board says so). Unit tests cover all four cases.
+- **Shared-segment explanation**: when a design has a separate segment output per digit (like the traffic light's `HexH`/`HexL`), the Pin Planner shows a box explaining that the Basys 3's digits share `seg`/`dp`, that each digit has its own active-low `an` enable, and what a multiplexer has to do. NanoLogic does not generate one. Validation also adds a warning.
+- **Export to Vivado** (the toolbar, menus and Tasks say "Vivado" for Basys 3 projects):
+  - Level 1: `src/*.v`. Level 2: plus `pins.md` and `pins.csv`.
+  - Level 3: plus `<project>.xdc` (only the mapped ports, `create_clock -period 10.000` on the 100 MHz clock when it is used, the configuration properties) and `create_project.tcl`, which creates the project for `xc7a35tcpg236-1` in a `vivado/` folder next to it, adds the sources and the `.xdc` and sets the top module. Tcl rather than `.xpr`, so it works across Vivado versions. Testbenches are left out.
+  - Unit tests compare the generated `.xdc` and `.tcl` with expected text.
+- **Starter example** (`examples/basys3-starter`, on the Home screen as "Basys 3 starter (experimental)"): switches to LEDs, and a 16-bit counter scanned across all four digits (btnU adds one, btnC resets, `sw[15]` up makes it count by itself). Unit and end-to-end tests run it on the virtual board and read 0000 → 0001 → 0002 → 0000 off the scanned display.
+- **Level 3 export of the starter** is in `examples/basys3-starter-export/` (regenerate with `npm run examples:export`).
+
+### What does not work / limitations
+
+1. **Nothing has been checked on a Basys 3 or in Vivado.** See the checklist below.
+2. **The Basys 3 reference manual could not be read from the cloud session** (digilent.com is not in this session's network allowlist). I used the polarities you gave me. Secondary sources (a university lecture and a Digilent forum thread) agree that the anodes and the segment cathodes are active-low. I could not independently confirm from the manual that the buttons read 1 when pressed and that switches and LEDs are active-high. Nothing I found disagrees with your list.
+3. **Speed**: the virtual board runs about 1.5-2 million cycles per second here, about 50× slower than the real 100 MHz. The display stays correct because persistence is measured in board time, but at Max it takes about half a second of real time to fill the 10 ms window, so the display reacts to button presses with a short lag. Designs that count at human speed from the 100 MHz clock (e.g. once a second) need the divider bypass, as on the DE10-Lite.
+4. **Only on-board I/O**: Pmod headers, VGA, USB-UART, PS/2 and the Quad SPI flash pins are in the master XDC but not in NanoLogic yet.
+5. **Buttons are not debounced on the board** as far as I know (the manual would say; I could not read it). The starter example samples `btnU` once per scan period (~2.6 ms), which should ignore normal contact bounce. Please check that one press adds exactly one.
+6. **Stretch goal (Build bitstream with openXC7)**: see "Blockers" below.
+
+### What to check on real hardware and in Vivado
+
+1. In Vivado (any recent version), **Tools > Run Tcl Script** on `examples/basys3-starter-export/create_project.tcl`. Check that the project opens with part `xc7a35tcpg236-1`, that `top` is the top module, and that the `.xdc` is under Constraints.
+2. Run **Generate Bitstream**. Check for no critical warnings about unplaced ports, I/O standards or the clock, and that timing is met at 100 MHz.
+3. Program the board (Hardware Manager) and check:
+   - each switch lights the LED above it (sw0 → LD0, rightmost);
+   - the display shows `0000` steadily, with no flicker or ghosting;
+   - each press of **btnU** adds exactly one (so bounce is filtered), **btnC** resets to `0000`, `sw[15]` up makes it count by itself about 6 times a second;
+   - `an[0]` is the **rightmost** digit, and the segment order matches (a "1" lights the two right-hand segments);
+   - the decimal points stay off.
+4. Tell me anything that differs, especially polarities.
+
+### Blockers
+
+- **digilent.com is blocked in the cloud session**, so I could not read the Basys 3 reference manual (see limitation 2). If you allow `digilent.com` in the environment's network settings, I can check the polarities against it.
+- **openXC7 "Build bitstream" (stretch)**: see the note at the end of this section once checked.
+
+---
+
+# DE10-Lite MVP notes (30 Oct 2026)
 
 ## Summary for Ali
 
