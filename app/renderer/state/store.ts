@@ -18,7 +18,7 @@ export type Doc =
   | { id: 'board'; kind: 'board'; title: string }
   | { id: 'pins'; kind: 'pins'; title: string };
 
-export type DialogId = 'newProject' | 'import' | 'export' | 'simulate' | 'newFile' | 'about';
+export type DialogId = 'newProject' | 'import' | 'export' | 'simulate' | 'newFile' | 'about' | 'settings';
 
 export interface BoardUiState {
   started: boolean;
@@ -26,7 +26,8 @@ export interface BoardUiState {
   state?: BoardState;
   nets: SimNetInfo[];
   report?: BoardWiringReport;
-  inputs: { SW: number; KEY: number };
+  /** Switch/button levels per board input group (see BoardInputs). */
+  inputs: Record<string, number>;
 }
 
 export interface AppState {
@@ -59,7 +60,7 @@ export const initialState: AppState = {
   navigatorTab: 'files',
   recent: [],
   examples: [],
-  board: { started: false, starting: false, nets: [], inputs: { SW: 0, KEY: 0b11 } },
+  board: { started: false, starting: false, nets: [], inputs: {} },
 };
 
 type Listener = () => void;

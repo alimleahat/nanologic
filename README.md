@@ -2,9 +2,11 @@
 
 A desktop app (macOS and Windows) for students learning digital design on the Terasic DE10-Lite FPGA board. Write Verilog, check it, simulate it, look at waveforms, try it on a virtual DE10-Lite, then export a project that opens in Intel Quartus Prime Lite 17.1 on the lab PCs.
 
+The Digilent Basys 3 is also supported as a second board (**experimental, not yet verified on hardware**): virtual board with a multiplexed four-digit display, and export to Xilinx Vivado.
+
 Everything runs inside the app. Students do not need to install a compiler, Icarus Verilog, Yosys or Quartus to use it.
 
-Status and open questions: [docs/progress.md](docs/progress.md). How the simulator was chosen: [docs/toolchain-decision.md](docs/toolchain-decision.md). Licences: [docs/licences.md](docs/licences.md).
+Status and open questions: [docs/progress.md](docs/progress.md). Lab test steps for real boards: [docs/hardware-test-checklist.md](docs/hardware-test-checklist.md). How the simulator was chosen: [docs/toolchain-decision.md](docs/toolchain-decision.md). Licences: [docs/licences.md](docs/licences.md).
 
 ## What you need (developers only)
 
@@ -89,7 +91,7 @@ CI (GitHub Actions) also builds both installers when you start the workflow by h
 
 ## Regenerate the example Quartus export
 
-`examples/traffic-light-export/` is the reference project exported for Quartus. After changing the exporter or the example's pin mapping, regenerate it with:
+`examples/traffic-light-export/` is the reference project exported for Quartus, and `examples/basys3-starter-export/` is the Basys 3 starter exported for Vivado. After changing an exporter or an example's pin mapping, regenerate them with:
 
 ```bash
 npm run examples:export
@@ -104,6 +106,7 @@ npm run examples:export
 | `app/renderer` | The user interface (React): layout, editor, waveform viewer, virtual board, pin planner. Colours and sizes are in `theme.ts` |
 | `app/shared` | Code used by both sides: board data helpers, Verilog scanner, virtual-board simulator, Quartus export, VCD reader |
 | `boards/de10-lite.json` | DE10-Lite pins and I/O standards from the User Manual |
+| `boards/basys3.json` | Basys 3 pins and I/O standards from Digilent's master XDC (experimental) |
 | `templates` | Verilog templates and the starter top-level file |
 | `examples` | The starter example, the reference project's NanoLogic project file and its Quartus export |
 | `tests` | Unit tests, end-to-end tests and the reference project (read-only copy) |
@@ -111,6 +114,6 @@ npm run examples:export
 
 ## CI
 
-- Every push: Linux typecheck, unit tests, end-to-end tests, a packaged-app smoke test and screenshots (download them from the run's "Artifacts").
+- Every push: Linux typecheck, unit tests (including the virtual-board vs Icarus Verilog cross-check), end-to-end tests, a packaged-app smoke test and screenshots (download them from the run's "Artifacts").
 - The open pull request from `dev` to `main`, pushes to `main`, and manual runs: the same checks on macOS and Windows.
 - Manual runs, pushes to `main` and commits with `[installers]` in the message: unsigned macOS and Windows installers.

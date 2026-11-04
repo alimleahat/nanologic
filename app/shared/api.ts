@@ -1,6 +1,6 @@
 // The API the preload script exposes to the renderer as `window.nanologic`.
 import type { ImportClassification } from './importScan';
-import type { BoardOutputLevels, BoardWiringReport } from './netsim/boardEngine';
+import type { BoardInputs, BoardOutputLevels, BoardWiringReport, DisplayFrame } from './netsim/boardEngine';
 import type { SimNetInfo } from './netsim/compile';
 import type { Message } from './messages';
 import type { ExportLevel, NanoLogicProject } from './project';
@@ -53,6 +53,8 @@ export interface BoardState {
   speed: ClockSpeed;
   /** Measured clock cycles per second over the last interval. */
   actualHz: number;
+  /** Multiplexed seven-segment display as the eye sees it (Basys 3). */
+  display?: DisplayFrame;
   error?: string;
 }
 
@@ -102,14 +104,15 @@ export interface NanoLogicApi {
   ): Promise<SimulationResult>;
 
   boardStart(projectDir: string, project: NanoLogicProject, unsaved: Record<string, string>): Promise<BoardStartResult>;
-  boardSetInputs(inputs: { SW?: number; KEY?: number }): void;
+  boardSetInputs(inputs: BoardInputs): void;
   boardSetClock(opts: { speed?: ClockSpeed; running?: boolean }): void;
   boardStep(cycles: number): void;
   boardReset(): void;
   boardStop(): void;
   onBoardState(cb: (state: BoardState) => void): () => void;
 
-  exportQuartus(projectDir: string, project: NanoLogicProject, level: ExportLevel, destFolder: string): Promise<ExportResult>;
+  /** Export for the board's vendor tool (Quartus or Vivado). */
+  exportProject(projectDir: string, project: NanoLogicProject, level: ExportLevel, destFolder: string): Promise<ExportResult>;
   showInFolder(absPath: string): void;
 
   /** Menu commands sent from the native menu (macOS) to the renderer. */

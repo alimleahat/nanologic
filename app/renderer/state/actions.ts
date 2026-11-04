@@ -3,6 +3,7 @@
 import type { ClockSpeed, ImportOptions, NewProjectOptions, OpenedProject } from '@shared/api';
 import { getBoard } from '@shared/board';
 import type { Message, MessageSource } from '@shared/messages';
+import { defaultBoardInputs } from '@shared/netsim/boardEngine';
 import { autoMap, validatePins } from '@shared/pins';
 import type { ExportLevel, NanoLogicProject } from '@shared/project';
 import { store, type DialogId, type Doc, type TaskId, type TaskStatus } from './store';
@@ -68,6 +69,7 @@ async function setProject(opened: OpenedProject) {
     tasks: { analysis: 'idle', simulation: 'idle', board: 'idle', export: 'idle' },
     statusText: `Opened ${opened.project.name}`,
     navigatorTab: 'hierarchy',
+    board: { started: false, starting: false, nets: [], inputs: defaultBoardInputs(getBoard(opened.project.boardId)) },
   }));
   const top = opened.project.designFiles.find((f) => /\.s?v$/i.test(f) && f.split('/').pop()?.replace(/\.s?v$/i, '') === opened.project.topLevelEntity);
   if (top) await openFile(top);
@@ -88,7 +90,7 @@ export async function closeProject(silent = false) {
     messages: [],
     analysis: undefined,
     ports: [],
-    board: { started: false, starting: false, nets: [], inputs: { SW: 0, KEY: 0b11 } },
+    board: { started: false, starting: false, nets: [], inputs: {} },
     statusText: 'Ready',
   });
 }
@@ -175,6 +177,22 @@ export async function removeFromProject(rel: string) {
   }));
 }
 
+/** Switch the project to another board. Pin assignments belong to a board, so they are cleared. */
+export async function changeBoard(boardId: string) {
+  const s = store.get();
+  if (!s.project || s.project.project.boardId === boardId) return;
+  if (s.board.started) api().boardStop();
+  await updateProject((p) => ({ ...p, boardId, pinAssignments: [], virtualBoard: { ...p.virtualBoard, tieOffs: {} } }));
+  store.set((st) => ({
+    board: { started: false, starting: false, nets: [], inputs: defaultBoardInputs(getBoard(boardId)) },
+    docs: st.docs.filter((d) => d.kind !== 'board'),
+    active: st.active === 'board' ? 'welcome' : st.active,
+    tasks: { ...st.tasks, board: 'idle', export: 'idle' },
+    statusText: `Board changed to ${getBoard(boardId).name}`,
+  }));
+  await runAnalysis();
+}
+
 export async function setTopLevel(entity: string) {
   await updateProject((p) => ({ ...p, topLevelEntity: entity }));
   void runAnalysis();
@@ -188,7 +206,9 @@ export function activate(id: string) {
 }
 
 export function openSingleton(kind: 'board' | 'pins' | 'welcome') {
-  const titles = { board: 'Virtual DE10-Lite', pins: 'Pin Assignments', welcome: 'Home' };
+  const boardId = store.get().project?.project.boardId;
+  const boardName = boardId ? getBoard(boardId).name.replace(/^(Terasic|Digilent) /, '') : 'Board';
+  const titles = { board: `Virtual ${boardName}`, pins: 'Pin Assignments', welcome: 'Home' };
   store.set((s) => {
     if (s.docs.some((d) => d.id === kind)) return { active: kind };
     return { docs: [...s.docs, { id: kind, kind, title: titles[kind] } as Doc], active: kind };
@@ -343,7 +363,7 @@ export async function startBoard() {
   }
 }
 
-export function setBoardInputs(inputs: Partial<{ SW: number; KEY: number }>) {
+export function setBoardInputs(inputs: Record<string, number>) {
   store.set((s) => ({ board: { ...s.board, inputs: { ...s.board.inputs, ...inputs } } }));
   api().boardSetInputs(inputs);
 }
@@ -364,14 +384,14 @@ export function subscribeBoardState(): () => void {
   return api().onBoardState((state) => store.set((s) => ({ board: { ...s.board, state } })));
 }
 
-export async function exportToQuartus(level: ExportLevel, dest: string) {
+export async function exportProject(level: ExportLevel, dest: string) {
   const s = store.get();
   if (!s.project) return;
   setTask('export', 'running');
-  setStatus('Exporting to Quartus...');
+  setStatus('Exporting...');
   try {
     await updateProject((p) => ({ ...p, exportLevel: level }));
-    const r = await api().exportQuartus(s.project.dir, store.get().project!.project, level, dest);
+    const r = await api().exportProject(s.project.dir, store.get().project!.project, level, dest);
     replaceMessages(['export'], r.messages);
     setTask('export', r.ok ? 'passed' : 'failed');
     setStatus(r.ok ? `Exported to ${r.folder}` : 'Export failed. See Messages.');

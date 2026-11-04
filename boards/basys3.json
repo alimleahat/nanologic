@@ -1,0 +1,220 @@
+{
+  "id": "basys3",
+  "name": "Digilent Basys 3",
+  "vendor": "xilinx",
+  "toolchain": "vivado",
+  "family": "Artix-7",
+  "device": "xc7a35tcpg236-1",
+  "status": "experimental",
+  "statusNote": "Experimental - not yet verified on hardware",
+  "source": "Digilent Basys-3-Master.xdc from https://github.com/Digilent/digilent-xdc",
+  "sourceFile": "Basys-3-Master.xdc",
+  "sourceCommit": "c8644a9fe31cc803789643124545d56b3bef4600",
+  "sourceFileLastChangedCommit": "69d35015d4c3a0cb384a964459593cea5260697a",
+  "sourceLicence": "MIT (Copyright (c) 2017 Digilent)",
+  "sevenSegmentBits": [
+    "top",
+    "top-right",
+    "bottom-right",
+    "bottom",
+    "bottom-left",
+    "top-left",
+    "middle",
+    "decimal point"
+  ],
+  "display": {
+    "segments": "seg",
+    "decimalPoint": "dp",
+    "anodes": "an",
+    "digits": 4
+  },
+  "designProperties": [
+    "set_property CONFIG_VOLTAGE 3.3 [current_design]",
+    "set_property CFGBVS VCCO [current_design]",
+    "set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]",
+    "set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]",
+    "set_property CONFIG_MODE SPIx4 [current_design]"
+  ],
+  "notes": [
+    "The four digits share one set of segment lines (seg, dp). A design must scan the digits by enabling one anode (an) at a time, fast enough that they all appear lit.",
+    "Segments and anodes are active-low; switches, buttons and LEDs are active-high.",
+    "Pmod headers, VGA, USB-UART, PS/2 and Quad SPI pins are in the master XDC but not used in NanoLogic yet."
+  ],
+  "groups": [
+    {
+      "name": "clk",
+      "kind": "clock",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "frequencyHz": 100000000,
+      "pins": [
+        "W5"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "sw",
+      "kind": "switch",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": false,
+      "pins": [
+        "V17",
+        "V16",
+        "W16",
+        "W17",
+        "W15",
+        "V15",
+        "W14",
+        "W13",
+        "V2",
+        "T3",
+        "T2",
+        "R3",
+        "W2",
+        "U1",
+        "T1",
+        "R2"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "btnC",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "pins": [
+        "U18"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "btnU",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "pins": [
+        "T18"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "btnL",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "pins": [
+        "W19"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "btnR",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "pins": [
+        "T17"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "btnD",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": true,
+      "pins": [
+        "U17"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "led",
+      "kind": "led",
+      "direction": "output",
+      "ioStandard": "LVCMOS33",
+      "activeLow": false,
+      "scalar": false,
+      "pins": [
+        "U16",
+        "E19",
+        "U19",
+        "V19",
+        "W18",
+        "U15",
+        "U14",
+        "V14",
+        "V13",
+        "V3",
+        "W3",
+        "U3",
+        "P3",
+        "N3",
+        "P1",
+        "L1"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "seg",
+      "kind": "segment",
+      "direction": "output",
+      "ioStandard": "LVCMOS33",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "W7",
+        "W6",
+        "U8",
+        "V8",
+        "U5",
+        "V5",
+        "U7"
+      ],
+      "virtual": true,
+      "note": "Cathodes CA-CG, shared by all four digits. Bit 0 = top (CA) ... 6 = middle (CG)."
+    },
+    {
+      "name": "dp",
+      "kind": "segment",
+      "direction": "output",
+      "ioStandard": "LVCMOS33",
+      "activeLow": true,
+      "scalar": true,
+      "pins": [
+        "V7"
+      ],
+      "virtual": true,
+      "note": "Decimal point cathode, shared by all four digits."
+    },
+    {
+      "name": "an",
+      "kind": "anode",
+      "direction": "output",
+      "ioStandard": "LVCMOS33",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "U2",
+        "U4",
+        "V4",
+        "W4"
+      ],
+      "virtual": true,
+      "note": "Digit enables (common anodes). an[0] is the rightmost digit."
+    }
+  ]
+}

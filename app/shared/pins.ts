@@ -103,6 +103,13 @@ export function validatePins(ports: TopPort[], list: PinAssignment[], board: Boa
     users.push(label);
     byPin.set(bb.pin, users);
   }
+  const perDigit = perDigitSegmentPorts(ports, board);
+  if (perDigit.length) {
+    add(
+      'warning',
+      `${perDigit.map((p) => `"${p.name}"`).join(' and ')} drive separate digits, but the ${board.name}'s digits share one set of segment lines. The design needs a multiplexer to show them (see the Pin Assignments view).`,
+    );
+  }
   for (const [pin, users] of byPin) {
     if (users.length > 1) add('error', `${users.join(' and ')} are all mapped to ${pin}. Each pin can only be used once.`);
   }
@@ -153,4 +160,21 @@ function describeLevel(g: BoardSignalGroup): string {
     default:
       return 'it is not inverted';
   }
+}
+
+/**
+ * On boards whose digits share segment lines (Basys 3), a design with its own
+ * 7/8-bit segment output per digit (like the traffic light's HexH and HexL)
+ * cannot drive the display directly: it needs a multiplexer that enables one
+ * digit at a time. Returns those per-digit outputs (empty if not applicable).
+ */
+export function perDigitSegmentPorts(ports: TopPort[], board: BoardDefinition): TopPort[] {
+  if (!board.display) return [];
+  const segGroup = board.display.segments.toLowerCase();
+  const candidates = ports.filter(
+    (p) => p.direction === 'output' && (p.width === 7 || p.width === 8) && p.name.toLowerCase() !== segGroup,
+  );
+  // 7-bit outputs are almost always segment patterns; 8-bit ones only if the name says so.
+  const likely = candidates.filter((p) => p.width === 7 || /hex|seg|digit|disp/i.test(p.name));
+  return likely.length >= 2 ? likely : [];
 }

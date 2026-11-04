@@ -38,7 +38,7 @@ export interface ExportOutput {
   messages: Message[];
 }
 
-interface ResolvedPin {
+export interface ResolvedPin {
   name: string; // port or port[bit]
   port: TopPort;
   bit: number | null;
@@ -172,16 +172,20 @@ export function generateSdc(pins: ResolvedPin[]): { text: string; clocks: number
   return { text: lines.join('\n'), clocks: clocks.length };
 }
 
-function levelHint(p: ResolvedPin): string {
+export function levelHint(p: ResolvedPin): string {
   switch (p.kind) {
     case 'button':
-      return '0 while pressed (active-low)';
+      return p.activeLow ? '0 while pressed (active-low)' : '1 while pressed';
     case 'switch':
       return '1 when up';
     case 'led':
       return 'lit when 1';
     case 'sevenseg':
       return 'segment lit when 0 (active-low)';
+    case 'segment':
+      return 'segment lit when 0 (active-low, shared by all digits)';
+    case 'anode':
+      return 'digit enabled when 0 (active-low)';
     case 'clock':
       return p.frequencyHz ? `${p.frequencyHz / 1e6} MHz clock` : 'clock';
     default:
@@ -189,7 +193,11 @@ function levelHint(p: ResolvedPin): string {
   }
 }
 
-export function generatePinTable(input: ExportInput, pins: ResolvedPin[]): { md: string; csv: string } {
+export function generatePinTable(
+  input: ExportInput,
+  pins: ResolvedPin[],
+  howTo = 'Enter these in Quartus with Assignments > Pin Planner, or use the full project export (level 3).',
+): { md: string; csv: string } {
   const header = ['Port', 'Direction', 'Board signal', 'Pin', 'I/O standard', 'Level'];
   const rows = pins.map((p) => [p.name, p.port.direction, p.boardId, p.pin, p.ioStandard, levelHint(p)]);
   const md = [
@@ -197,7 +205,8 @@ export function generatePinTable(input: ExportInput, pins: ResolvedPin[]): { md:
     '',
     `Board: ${input.board.name} (${input.board.family} ${input.board.device}). Top-level entity: \`${input.project.topLevelEntity}\`.`,
     '',
-    'Enter these in Quartus with Assignments > Pin Planner, or use the full project export (level 3).',
+    ...(input.board.statusNote ? [`**${input.board.statusNote}.**`, ''] : []),
+    howTo,
     '',
     `| ${header.join(' | ')} |`,
     `| ${header.map(() => '---').join(' | ')} |`,

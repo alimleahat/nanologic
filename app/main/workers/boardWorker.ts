@@ -20,7 +20,7 @@ export type BoardWorkerRequest =
       tieOffs: Record<string, number>;
       bypass: BypassSetting[];
     }
-  | { type: 'inputs'; SW?: number; KEY?: number }
+  | { type: 'inputs'; inputs: Record<string, number> }
   | { type: 'clock'; speed?: ClockSpeed; running?: boolean }
   | { type: 'step'; cycles: number }
   | { type: 'reset' }
@@ -49,7 +49,10 @@ function postState(force = false) {
   const now = performance.now();
   if (!engine || (!force && now - lastPost < 33)) return;
   lastPost = now;
-  post({ type: 'state', state: { outputs: engine.outputs(), cycles: engine.cycles, running, speed, actualHz, error } });
+  // Persistence of vision only makes sense when the clock runs fast enough;
+  // at 1 Hz-1 kHz or when stepping, show what is enabled at this instant.
+  const display = engine.display(speed === 'max' ? 'persistence' : 'instant');
+  post({ type: 'state', state: { outputs: engine.outputs(), cycles: engine.cycles, running, speed, actualHz, display, error } });
 }
 
 function runSafely(n: number) {
@@ -113,7 +116,7 @@ parentPort?.on('message', (m: BoardWorkerRequest) => {
       break;
     }
     case 'inputs':
-      engine?.setInputs({ ...(m.SW !== undefined ? { SW: m.SW } : {}), ...(m.KEY !== undefined ? { KEY: m.KEY } : {}) });
+      engine?.setInputs(m.inputs);
       postState(true);
       break;
     case 'clock':

@@ -1,8 +1,15 @@
-// Board definition types and helpers. The data itself lives in boards/*.json,
-// which is transcribed from the board vendor's user manual (see spec section 8).
+// Board definition types and helpers. The data itself lives in boards/*.json:
+// the DE10-Lite from Terasic's user manual (spec section 8), the Basys 3 from
+// Digilent's master XDC.
+import basys3Json from '../../boards/basys3.json';
 import de10LiteJson from '../../boards/de10-lite.json';
 
-export type BoardSignalKind = 'clock' | 'button' | 'switch' | 'led' | 'sevenseg';
+/**
+ * sevenseg: one display per group with its own segment lines (DE10-Lite HEXn).
+ * segment/anode: multiplexed displays with shared segment lines and one enable
+ * (anode) per digit (Basys 3 seg, dp, an).
+ */
+export type BoardSignalKind = 'clock' | 'button' | 'switch' | 'led' | 'sevenseg' | 'segment' | 'anode';
 
 export interface BoardSignalGroup {
   /** Signal name as used in the vendor manual, e.g. "SW" or "MAX10_CLK1_50". */
@@ -23,13 +30,32 @@ export interface BoardSignalGroup {
   note?: string;
 }
 
+/** Groups that make up a multiplexed seven-segment display. */
+export interface MultiplexedDisplay {
+  segments: string;
+  decimalPoint?: string;
+  anodes: string;
+  digits: number;
+}
+
 export interface BoardDefinition {
   id: string;
   name: string;
+  vendor: 'intel' | 'xilinx';
+  /** Which vendor tool the export targets. */
+  toolchain: 'quartus' | 'vivado';
   family: string;
   device: string;
+  /** "experimental": shown with statusNote in the board picker and exports. */
+  status?: 'experimental';
+  statusNote?: string;
   source: string;
+  sourceFile?: string;
+  sourceCommit?: string;
   sevenSegmentBits: string[];
+  display?: MultiplexedDisplay;
+  /** Extra design-level constraints for the vendor tool (e.g. XDC config properties). */
+  designProperties?: string[];
   notes: string[];
   groups: BoardSignalGroup[];
 }
@@ -45,8 +71,22 @@ export interface BoardBit {
 }
 
 export const DE10_LITE = de10LiteJson as BoardDefinition;
+export const BASYS3 = basys3Json as BoardDefinition;
 
-const boards: Record<string, BoardDefinition> = { [DE10_LITE.id]: DE10_LITE };
+/** All boards, in the order shown in the board picker. */
+export const BOARDS: BoardDefinition[] = [DE10_LITE, BASYS3];
+
+const boards: Record<string, BoardDefinition> = Object.fromEntries(BOARDS.map((b) => [b.id, b]));
+
+/** Board name with its status, for pickers and headings. */
+export function boardLabel(board: BoardDefinition): string {
+  return board.statusNote ? `${board.name} (${board.statusNote})` : board.name;
+}
+
+/** The board's main clock group (the one the virtual board drives). */
+export function mainClock(board: BoardDefinition): BoardSignalGroup | undefined {
+  return board.groups.find((g) => g.kind === 'clock' && g.virtual);
+}
 
 export function getBoard(id: string): BoardDefinition {
   const board = boards[id];

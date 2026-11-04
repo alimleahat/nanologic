@@ -53,6 +53,8 @@ export interface CompiledSimulator {
   settle(): void;
   getOutput(name: string): SimValue;
   getOutputs(): Record<string, SimValue>;
+  /** Write every output's value into `into`, in the order of `outputs` (no allocation). */
+  readOutputs(into: SimValue[]): void;
   getNet(name: string): SimValue;
   /** Restore power-up state (initial values, or zero). */
   reset(): void;
@@ -764,6 +766,7 @@ return {
   settle,
   reset,
   outputs() { return { ${outputExprs.map((o) => `${JSON.stringify(o.name)}: ${o.e.code}`).join(', ')} }; },
+  outputsInto(a) { ${outputExprs.map((o, i) => `a[${i}] = ${o.e.code};`).join(' ')} },
   net(name) { switch (name) { ${Object.entries(netExprs)
     .map(([n, e]) => `case ${JSON.stringify(n)}: return ${e};`)
     .join(' ')} } throw new Error('Unknown net ' + name); },
@@ -776,6 +779,7 @@ return {
     settle(): void;
     reset(): void;
     outputs(): Record<string, SimValue>;
+    outputsInto(a: SimValue[]): void;
     net(n: string): SimValue;
   };
   try {
@@ -798,6 +802,7 @@ return {
     settle: () => rt.settle(),
     getOutput: (n) => rt.outputs()[n],
     getOutputs: () => rt.outputs(),
+    readOutputs: (a) => rt.outputsInto(a),
     getNet: (n) => rt.net(n),
     reset: () => rt.reset(),
   };

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { findBoardBit, getBoard, listBoardBits } from '@shared/board';
-import { autoMap, mapPortToGroup, portBitName, setAssignment, sortAssignments, validatePins } from '@shared/pins';
+import { boardLabel, findBoardBit, getBoard, listBoardBits } from '@shared/board';
+import { autoMap, mapPortToGroup, perDigitSegmentPorts, portBitName, setAssignment, sortAssignments, validatePins } from '@shared/pins';
 import { portBitIndices, type TopPort } from '@shared/toolTypes';
 import { runAnalysis, updateProject } from '../state/actions';
 import { useStore } from '../state/store';
@@ -15,6 +15,7 @@ export function PinAssignments() {
   const list = project.project.pinAssignments;
   const bits = listBoardBits(board);
   const issues = validatePins(ports, list, board);
+  const perDigit = perDigitSegmentPorts(ports, board);
 
   const save = (next: typeof list) => void updateProject((p) => ({ ...p, pinAssignments: sortAssignments(next, ports) }));
   const assigned = (port: string, bit: number | null) => list.find((a) => a.port === port && a.bit === bit)?.board ?? '';
@@ -77,6 +78,38 @@ export function PinAssignments() {
       </div>
       {!ports.length && (
         <div className="empty">Run Analysis to list the top-level ports of {project.project.topLevelEntity}.</div>
+      )}
+      {board.statusNote && (
+        <div className="notice warning" style={{ margin: '12px 12px 0' }}>
+          <strong>{boardLabel(board)}.</strong> Pin data comes from {board.source}.
+        </div>
+      )}
+      {perDigit.length > 0 && board.display && (
+        <div className="notice warning" style={{ margin: 12, lineHeight: 1.5 }} data-testid="pins-multiplex-notice">
+          <strong>This design needs a display multiplexer to run on the {board.name}.</strong>
+          <div style={{ marginTop: 4 }}>
+            The outputs <span className="mono">{perDigit.map((p) => p.name).join(', ')}</span> each drive a whole digit. That works on boards
+            with separate segment pins per digit (like the DE10-Lite&apos;s HEX0-HEX5), but the {board.name}&apos;s {board.display.digits} digits
+            share one set of segment lines (<span className="mono">{board.display.segments}</span>
+            {board.display.decimalPoint ? (
+              <>
+                , <span className="mono">{board.display.decimalPoint}</span>
+              </>
+            ) : null}
+            ). Each digit has its own enable (<span className="mono">{board.display.anodes}</span>, active-low).
+          </div>
+          <div style={{ marginTop: 4 }}>
+            To show several digits, add a module that enables one digit at a time (set one <span className="mono">{board.display.anodes}</span> bit
+            to 0), puts that digit&apos;s pattern on <span className="mono">{board.display.segments}</span>, and moves to the next digit about every
+            millisecond. Then map its outputs to <span className="mono">{board.display.segments}</span> and{' '}
+            <span className="mono">{board.display.anodes}</span>. The Basys 3 starter example shows how. NanoLogic does not change your design for
+            you.
+          </div>
+          <div style={{ marginTop: 4 }}>
+            Mapping one of these outputs straight to <span className="mono">{board.display.segments}</span> (with that digit&apos;s{' '}
+            <span className="mono">{board.display.anodes}</span> bit tied low in your code) shows just that one digit.
+          </div>
+        </div>
       )}
       {issues.length > 0 && ports.length > 0 && (
         <div style={{ padding: '8px 12px' }} data-testid="pin-issues">

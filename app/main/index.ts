@@ -7,7 +7,7 @@ import type { BoardState, ExampleInfo, ImportOptions, NewProjectOptions, OpenedP
 import { getBoard } from '../shared/board';
 import type { Message } from '../shared/messages';
 import { PROJECT_EXTENSION, type ExportLevel, type NanoLogicProject } from '../shared/project';
-import { generateExport } from '../shared/quartusExport';
+import { generateBoardExport } from '../shared/boardExport';
 import type { AnalysisResult, SimulationResult } from '../shared/toolTypes';
 import { copyTree, createNewProject, exists, importFolder, openProjectFile, RecentProjects, saveProjectFile, scanImport, writeFileAtomic } from './projectFs';
 import { writeExport } from './exportFs';
@@ -132,6 +132,9 @@ interface ExampleDef extends ExampleInfo {
   destName: string;
 }
 
+/** Starter top-level file for new projects, per board (in templates/starter). */
+const STARTER_TEMPLATES: Record<string, string> = { 'de10-lite': 'top.v', basys3: 'basys3_top.v' };
+
 const EXAMPLES: ExampleDef[] = [
   {
     id: 'starter',
@@ -140,6 +143,15 @@ const EXAMPLES: ExampleDef[] = [
     sourceDir: 'examples/starter-de10lite',
     projectFile: 'starter.nlproj',
     destName: 'starter-de10lite',
+  },
+  {
+    id: 'basys3-starter',
+    title: 'Basys 3 starter (experimental)',
+    description:
+      'Switches to LEDs and a counter scanned across the four multiplexed digits. btnU adds one, btnC resets. Not yet verified on hardware.',
+    sourceDir: 'examples/basys3-starter',
+    projectFile: 'basys3_starter.nlproj',
+    destName: 'basys3-starter',
   },
   {
     id: 'traffic-light',
@@ -173,7 +185,7 @@ async function openExample(id: string): Promise<OpenedProject> {
 // ---------------------------------------------------------------------------
 // Export
 
-async function exportQuartus(projectDir: string, project: NanoLogicProject, level: ExportLevel, destFolder: string) {
+async function exportProject(projectDir: string, project: NanoLogicProject, level: ExportLevel, destFolder: string) {
   const messages: Message[] = [];
   const analysis = await tools.run<AnalysisResult>('analyse', [projectDir, project, {}]);
   if (!analysis.ok) {
@@ -186,7 +198,7 @@ async function exportQuartus(projectDir: string, project: NanoLogicProject, leve
   const sources = await Promise.all(
     project.designFiles.map(async (f) => ({ path: f, text: await fs.readFile(path.resolve(projectDir, f), 'utf8') })),
   );
-  const out = generateExport({
+  const out = generateBoardExport({
     project,
     board: getBoard(project.boardId),
     ports: analysis.ports,
@@ -213,7 +225,7 @@ function registerIpc() {
   ipcMain.handle('projects:recent', () => recent().list());
   ipcMain.handle('projects:defaultFolder', () => defaultProjectsFolder());
   ipcMain.handle('projects:new', async (_e, opts: NewProjectOptions) => {
-    const template = await fs.readFile(path.join(appRoot(), 'templates/starter/top.v'), 'utf8');
+    const template = await fs.readFile(path.join(appRoot(), 'templates/starter', STARTER_TEMPLATES[opts.boardId] ?? 'top.v'), 'utf8');
     const opened = await createNewProject(opts, template);
     await recent().add(opened.path);
     return opened;
@@ -303,14 +315,14 @@ function registerIpc() {
     }
     return { ok: true, messages: net.messages, ports: net.ports, nets: loaded.nets, report: loaded.report };
   });
-  ipcMain.on('board:inputs', (_e, inputs: { SW?: number; KEY?: number }) => sendBoard({ type: 'inputs', ...inputs }));
+  ipcMain.on('board:inputs', (_e, inputs: Record<string, number>) => sendBoard({ type: 'inputs', inputs }));
   ipcMain.on('board:clock', (_e, opts) => sendBoard({ type: 'clock', ...opts }));
   ipcMain.on('board:step', (_e, cycles: number) => sendBoard({ type: 'step', cycles }));
   ipcMain.on('board:reset', () => sendBoard({ type: 'reset' }));
   ipcMain.on('board:stop', () => stopBoard());
 
-  ipcMain.handle('export:quartus', (_e, dir: string, project: NanoLogicProject, level: ExportLevel, dest: string) =>
-    exportQuartus(dir, project, level, dest),
+  ipcMain.handle('export:project', (_e, dir: string, project: NanoLogicProject, level: ExportLevel, dest: string) =>
+    exportProject(dir, project, level, dest),
   );
   ipcMain.on('shell:showInFolder', (_e, p: string) => shell.showItemInFolder(p));
 }

@@ -28,3 +28,9 @@ Vite, esbuild, TypeScript, Vitest, Playwright, electron-builder: all MIT or Apac
 ## Board data
 
 `boards/de10-lite.json` contains pin numbers and I/O standards transcribed from the Terasic DE10-Lite User Manual (June 5, 2020). These are facts about the hardware; no Terasic or Intel artwork, text or logos are included.
+
+`boards/basys3.json` contains pin numbers, I/O standards and configuration properties taken from Digilent's `Basys-3-Master.xdc` (https://github.com/Digilent/digilent-xdc, commit `c8644a9fe31cc803789643124545d56b3bef4600`). That repository is under the **MIT licence** (Copyright (c) 2017 Digilent), which allows use in a closed-source app as long as the copyright and licence notice are kept. An unmodified copy of the file and its `License.txt` are in `tests/fixtures/digilent-xdc/` (used by the pin test). The generated `.xdc` files are derived from it and say so in their header. No Digilent or AMD/Xilinx artwork or logos are included.
+
+| Component | Version | Licence | Closed-source bundling | Notes |
+|---|---|---|---|---|
+| Digilent master XDC (Basys 3 pin data) | commit `c8644a9` | MIT | Allowed; keep the notice | Notice text: `tests/fixtures/digilent-xdc/License.txt`, shipped in the installer as `resources/licences/digilent-xdc-MIT.txt`. |
