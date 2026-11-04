@@ -72,14 +72,11 @@ Developed on the `basys3` branch and merged into `dev` through PR #2. Nothing ch
    - the decimal points stay off.
 4. Tell me anything that differs, especially polarities.
 
-### CI status
+### CI status and merge
 
-All green on commit `c2ed7ad`:
-
-- Linux (push run 22): typecheck, unit tests (Basys 3 pin check, display model, Vivado export, plus all DE10-Lite tests), end-to-end tests (4 new Basys 3 tests and all DE10-Lite tests), packaged-app smoke test.
-- macOS and Windows (PR #2, run 23): typecheck, unit tests, build, end-to-end tests.
-
-Run pages: https://github.com/alimleahat/nanologic/actions/runs/41518133760 (Linux) and https://github.com/alimleahat/nanologic/actions/runs/41518143233 (macOS/Windows). Screenshots of the Basys 3 screens (`*-b3-*.png`) are in each run's Artifacts.
+- Final checks on `basys3` at commit `35b6f9b` (including the new simulator cross-check): all green. Linux: https://github.com/alimleahat/nanologic/actions/runs/41752799637. macOS and Windows (PR #2): https://github.com/alimleahat/nanologic/actions/runs/41752805544.
+- Merged into `dev` on 4 Nov 2026 (merge commit, PR #2). PR #1 (`dev` → `main`) stays open as a draft.
+- Fresh installers were requested from `dev` by the commit "Progress notes: Basys 3 merged into dev [installers]". Download them from that commit's CI run under Artifacts (`installer-macOS`: `.dmg` for Apple Silicon and Intel; `installer-Windows`: `.exe`), kept for 7 days.
 
 ### Blockers
 
