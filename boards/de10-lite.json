@@ -1,0 +1,234 @@
+{
+  "id": "de10-lite",
+  "name": "Terasic DE10-Lite",
+  "vendor": "intel",
+  "toolchain": "quartus",
+  "family": "MAX 10",
+  "device": "10M50DAF484C7G",
+  "source": "DE10-Lite User Manual, Terasic, revision dated June 5, 2020 (transcribed via NanoLogic spec section 8)",
+  "sevenSegmentBits": [
+    "top",
+    "top-right",
+    "bottom-right",
+    "bottom",
+    "bottom-left",
+    "top-left",
+    "middle",
+    "decimal point"
+  ],
+  "notes": [
+    "Seven-segment displays are common anode: a segment is lit when its bit is 0.",
+    "The manual lists a DP pin for every digit, but its Control Panel chapter says the dots are not enabled on the board. To be checked on real hardware."
+  ],
+  "groups": [
+    {
+      "name": "ADC_CLK_10",
+      "kind": "clock",
+      "direction": "input",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": false,
+      "scalar": true,
+      "frequencyHz": 10000000,
+      "pins": [
+        "PIN_N5"
+      ],
+      "virtual": false,
+      "note": "10 MHz ADC clock; not used in the MVP"
+    },
+    {
+      "name": "MAX10_CLK1_50",
+      "kind": "clock",
+      "direction": "input",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": false,
+      "scalar": true,
+      "frequencyHz": 50000000,
+      "pins": [
+        "PIN_P11"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "MAX10_CLK2_50",
+      "kind": "clock",
+      "direction": "input",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": false,
+      "scalar": true,
+      "frequencyHz": 50000000,
+      "pins": [
+        "PIN_N14"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "KEY",
+      "kind": "button",
+      "direction": "input",
+      "ioStandard": "3.3 V SCHMITT TRIGGER",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_B8",
+        "PIN_A7"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "SW",
+      "kind": "switch",
+      "direction": "input",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": false,
+      "scalar": false,
+      "pins": [
+        "PIN_C10",
+        "PIN_C11",
+        "PIN_D12",
+        "PIN_C12",
+        "PIN_A12",
+        "PIN_B12",
+        "PIN_A13",
+        "PIN_A14",
+        "PIN_B14",
+        "PIN_F15"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "LEDR",
+      "kind": "led",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": false,
+      "scalar": false,
+      "pins": [
+        "PIN_A8",
+        "PIN_A9",
+        "PIN_A10",
+        "PIN_B10",
+        "PIN_D13",
+        "PIN_C13",
+        "PIN_E14",
+        "PIN_D14",
+        "PIN_A11",
+        "PIN_B11"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX0",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_C14",
+        "PIN_E15",
+        "PIN_C15",
+        "PIN_C16",
+        "PIN_E16",
+        "PIN_D17",
+        "PIN_C17",
+        "PIN_D15"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX1",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_C18",
+        "PIN_D18",
+        "PIN_E18",
+        "PIN_B16",
+        "PIN_A17",
+        "PIN_A18",
+        "PIN_B17",
+        "PIN_A16"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX2",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_B20",
+        "PIN_A20",
+        "PIN_B19",
+        "PIN_A21",
+        "PIN_B21",
+        "PIN_C22",
+        "PIN_B22",
+        "PIN_A19"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX3",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_F21",
+        "PIN_E22",
+        "PIN_E21",
+        "PIN_C19",
+        "PIN_C20",
+        "PIN_D19",
+        "PIN_E17",
+        "PIN_D22"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX4",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_F18",
+        "PIN_E20",
+        "PIN_E19",
+        "PIN_J18",
+        "PIN_H19",
+        "PIN_F19",
+        "PIN_F20",
+        "PIN_F17"
+      ],
+      "virtual": true
+    },
+    {
+      "name": "HEX5",
+      "kind": "sevenseg",
+      "direction": "output",
+      "ioStandard": "3.3-V LVTTL",
+      "activeLow": true,
+      "scalar": false,
+      "pins": [
+        "PIN_J20",
+        "PIN_K20",
+        "PIN_L18",
+        "PIN_N18",
+        "PIN_M20",
+        "PIN_N19",
+        "PIN_N20",
+        "PIN_L19"
+      ],
+      "virtual": true
+    }
+  ]
+}

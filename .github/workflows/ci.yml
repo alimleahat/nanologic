@@ -1,0 +1,137 @@
+name: CI
+
+# Linux checks run on every push. macOS and Windows jobs cost more minutes on a
+# private repository, so they only run on pull requests (the long-lived
+# dev -> main PR), on pushes to main and when started by hand from the Actions
+# tab (Run workflow). Installers are built on main, by hand, and for commits
+# whose message contains [installers].
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      installers:
+        description: Also build the macOS and Windows installers
+        type: boolean
+        default: true
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux checks
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests (includes board pin table, export files and the reference project)
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: End-to-end tests (Electron under Xvfb)
+        run: xvfb-run -a npx playwright test
+      - name: Package (unpacked) and smoke-test the packaged app
+        run: |
+          npx electron-builder --linux dir --publish never
+          NANOLOGIC_PACKAGED="$PWD/release/linux-unpacked/nanologic" xvfb-run -a npx playwright test tests/e2e/packaged.spec.ts
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-linux
+          path: test-results/
+          retention-days: 14
+
+  desktop:
+    name: ${{ matrix.os }} checks
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: End-to-end tests
+        run: npx playwright test
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.os }}
+          path: test-results/
+          retention-days: 14
+
+  # Also built for a push whose commit message contains [installers], so they
+  # can be produced once per milestone without running on every push.
+  installers:
+    name: ${{ matrix.os }} installer
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.installers) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[installers]'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            command: npx electron-builder --mac --publish never
+            files: release/*.dmg
+          - os: windows-latest
+            command: npx electron-builder --win --publish never
+            files: release/*.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      # Unsigned for now (signing comes later).
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Build installer
+        run: ${{ matrix.command }}
+      - name: Smoke-test the packaged app
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            EXE="$(ls -d release/mac-arm64/NanoLogic.app 2>/dev/null || ls -d release/mac/NanoLogic.app)/Contents/MacOS/NanoLogic"
+          else
+            EXE="$PWD/release/win-unpacked/NanoLogic.exe"
+          fi
+          NANOLOGIC_PACKAGED="$EXE" npx playwright test tests/e2e/packaged.spec.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ runner.os }}
+          path: ${{ matrix.files }}
+          retention-days: 7
+          compression-level: 0

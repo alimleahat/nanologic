@@ -1,0 +1,125 @@
+{
+  "name": "nanologic",
+  "productName": "NanoLogic",
+  "version": "0.1.0",
+  "description": "Verilog editor, simulator and virtual DE10-Lite board for students, with export to Intel Quartus Prime Lite 17.1.",
+  "author": "Ali Mleahat",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "out/main/index.cjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build && node scripts/build-main.mjs",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "spike": "vitest run tests/unit/reference-project.test.ts",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:linux": "npm run build && electron-builder --linux dir --publish never",
+    "examples:export": "node scripts/update-examples.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@veriflow/iverilog-wasm": "0.1.4",
+    "@yowasp/yosys": "0.70.1258"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "5.2.8",
+    "@fontsource/jetbrains-mono": "5.2.8",
+    "@monaco-editor/react": "4.7.0",
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "electron": "42.11.18",
+    "electron-builder": "26.0.12",
+    "esbuild": "0.25.12",
+    "monaco-editor": "0.54.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-resizable-panels": "3.0.6",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "3.2.7"
+  },
+  "build": {
+    "appId": "app.nanologic.desktop",
+    "productName": "NanoLogic",
+    "copyright": "Copyright \u00a9 2026 Ali Mleahat",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "asar": false,
+    "files": [
+      "out/**",
+      "!out/**/*.map",
+      "boards/**",
+      "templates/**",
+      "examples/**",
+      "tests/fixtures/fpga-traffic-light-controller/**",
+      "docs/licences.md",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/@veriflow/iverilog-wasm/LICENSE",
+        "to": "licences/icarus-verilog-GPL-2.0.txt"
+      },
+      {
+        "from": "node_modules/@veriflow/iverilog-wasm/dist/SOURCE.md",
+        "to": "licences/icarus-verilog-SOURCE.md"
+      },
+      {
+        "from": "docs/licences.md",
+        "to": "licences/THIRD_PARTY_LICENCES.md"
+      },
+      {
+        "from": "tests/fixtures/digilent-xdc/License.txt",
+        "to": "licences/digilent-xdc-MIT.txt"
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.education",
+      "identity": null
+    },
+    "dmg": {
+      "artifactName": "NanoLogic-${version}-mac-${arch}.dmg"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "NanoLogic-${version}-windows-setup.exe"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Education"
+    }
+  }
+}

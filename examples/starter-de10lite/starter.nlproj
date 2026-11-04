@@ -1,0 +1,29 @@
+{
+  "format": "nanologic-project",
+  "version": 1,
+  "name": "starter",
+  "boardId": "de10-lite",
+  "topLevelEntity": "top",
+  "designFiles": [
+    "top.v",
+    "hex_to_7seg.v"
+  ],
+  "testbenchFiles": [
+    "top_tb.v"
+  ],
+  "pinAssignments": [],
+  "exportLevel": 3,
+  "simulation": {
+    "maxTimeNs": 1000000,
+    "lastTestbench": "top_tb.v"
+  },
+  "virtualBoard": {
+    "bypass": [
+      {
+        "net": "tick",
+        "mode": "high"
+      }
+    ],
+    "tieOffs": {}
+  }
+}
