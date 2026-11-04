@@ -1,10 +1,39 @@
 # Progress
 
-Last updated: 2 Nov 2026 (Basys 3 support, branch `basys3`). The DE10-Lite notes from 30 Oct follow after the Basys 3 section.
+Last updated: 4 Nov 2026. **Feature freeze**: from now on only fixes from the lab tests (see `docs/hardware-test-checklist.md`). The DE10-Lite notes from 30 Oct follow after the Basys 3 section.
 
-## Basys 3 support (experimental) - branch `basys3`
+## Simulator cross-check (permanent CI test)
 
-Everything is on the `basys3` branch (made from `dev`), with a pull request `basys3` → `dev` for the macOS/Windows checks. Nothing changed for the DE10-Lite: all its tests still pass.
+`tests/unit/differential.test.ts` runs every design below in both the virtual-board simulator and Icarus Verilog with the same seeded random inputs, cycle by cycle, and fails on any difference. It runs on every CI job (Linux, macOS, Windows). Resets are asserted for the first cycles and then rarely, so counters get to run; the starter examples use small divider parameters so their counters and display scanning actually move within the test. Where outputs change too rarely (behind the 50 MHz → 1 Hz divider), internal registers are compared too (`ClockDivider.count`, and in `MainCode` the divider count, `ControlSignal` and `Count`). Samples that are still x/z in Icarus (4 samples of the `BCD7Seg` latch output before its first valid input) are skipped, and the test requires at least 90% of samples to be compared.
+
+Coverage on 4 Nov 2026 (also written to `test-results/differential-summary.md` in each CI run's artifacts):
+
+| Design | Cycles | Signals compared | Samples compared | Skipped (x/z in Icarus) | Result |
+|---|---|---|---|---|---|
+| DE10-Lite starter (DIV = 5) | 4000 | 7 | 28000 | 0 | match |
+| Basys 3 starter (REFRESH_BITS = 6, AUTO_BITS = 7) | 4000 | 4 | 16000 | 0 | match |
+| traffic light: MainCode | 4000 | 9 | 36000 | 0 | match |
+| traffic light: ClockDivider | 4000 | 2 | 8000 | 0 | match |
+| traffic light: CoreLogic | 4000 | 3 | 12000 | 0 | match |
+| traffic light: CounterUnit | 4000 | 1 | 4000 | 0 | match |
+| traffic light: Decoder | 1000 | 4 | 4000 | 0 | match |
+| traffic light: SevenSegDisplay | 1000 | 2 | 2000 | 0 | match |
+| traffic light: BinaryBCD | 1000 | 2 | 2000 | 0 | match |
+| traffic light: BCD7Seg | 1000 | 1 | 996 | 4 | match |
+| traffic light: Subtractor | 1000 | 1 | 1000 | 0 | match |
+| traffic light: FourBitFullAdder | 1000 | 2 | 2000 | 0 | match |
+| traffic light: OneBitFullAdder | 1000 | 2 | 2000 | 0 | match |
+| traffic light: Comparator4 | 1000 | 1 | 1000 | 0 | match |
+| traffic light: Mux2Way4 | 1000 | 1 | 1000 | 0 | match |
+| traffic light: Mux | 1000 | 1 | 1000 | 0 | match |
+| **Total (16 designs)** | **34000** | | **120996** | | |
+
+The test was checked by deliberately breaking the simulator's adder: it then failed for the DE10-Lite starter, the Basys 3 starter, `CoreLogic`, `ClockDivider` and `MainCode`.
+
+
+## Basys 3 support (experimental)
+
+Developed on the `basys3` branch and merged into `dev` through PR #2. Nothing changed for the DE10-Lite: all its tests still pass.
 
 ### What works
 
@@ -25,11 +54,11 @@ Everything is on the `basys3` branch (made from `dev`), with a pull request `bas
 ### What does not work / limitations
 
 1. **Nothing has been checked on a Basys 3 or in Vivado.** See the checklist below.
-2. **The Basys 3 reference manual could not be read from the cloud session** (digilent.com is not in this session's network allowlist). I used the polarities you gave me. Secondary sources (a university lecture and a Digilent forum thread) agree that the anodes and the segment cathodes are active-low. I could not independently confirm from the manual that the buttons read 1 when pressed and that switches and LEDs are active-high. Nothing I found disagrees with your list.
+2. **Polarities: resolved (4 Nov 2026).** Ali confirmed from Digilent's Basys 3 reference manual: push buttons are low at rest and high only while pressed; slide switches give a constant high or low; the seven-segment segments and anodes are active-low. This matches `boards/basys3.json` and the virtual board.
 3. **Speed**: the virtual board runs about 1.5-2 million cycles per second here, about 50× slower than the real 100 MHz. The display stays correct because persistence is measured in board time, but at Max it takes about half a second of real time to fill the 10 ms window, so the display reacts to button presses with a short lag. Designs that count at human speed from the 100 MHz clock (e.g. once a second) need the divider bypass, as on the DE10-Lite.
 4. **Only on-board I/O**: Pmod headers, VGA, USB-UART, PS/2 and the Quad SPI flash pins are in the master XDC but not in NanoLogic yet.
-5. **Buttons are not debounced on the board** as far as I know (the manual would say; I could not read it). The starter example samples `btnU` once per scan period (~2.6 ms), which should ignore normal contact bounce. Please check that one press adds exactly one.
-6. **No "Build bitstream"**: the openXC7 stretch goal was stopped (see "Blockers" below). Bitstreams come from Vivado via the export.
+5. **Button bounce**: the starter example samples `btnU` once per scan period (~2.6 ms), which should ignore normal contact bounce. Please check in the lab that one press adds exactly one.
+6. **No "Build bitstream"**: parked for phase 2 (see below). Bitstreams come from Vivado via the export.
 
 ### What to check on real hardware and in Vivado
 
@@ -54,13 +83,16 @@ Run pages: https://github.com/alimleahat/nanologic/actions/runs/41518133760 (Lin
 
 ### Blockers
 
-- **digilent.com is blocked in the cloud session**, so I could not read the Basys 3 reference manual (see limitation 2). If you allow `digilent.com` in the environment's network settings, I can check the polarities against it.
-- **openXC7 "Build bitstream" (stretch goal): stopped, not built.** What I found:
+- ~~digilent.com is blocked in the cloud session, so the reference manual could not be read.~~ **Resolved**: Ali confirmed the polarities from the manual (limitation 2).
+
+### Phase 2 (parked): openXC7 "Build bitstream"
+
+Decision (4 Nov 2026): parked for phase 2. No download-on-first-use feature is to be added in the MVP. What was found:
   - The network *can* fetch it. The only prebuilt openXC7 builds I found are Apio's (`fpgawars/tools-openxc7`, release `2026-09-24`): Linux x86-64, macOS Apple Silicon and Windows x64. There is **no build for Intel Macs**. Each package is about 109 MB to download (739 MB unpacked), plus a 25 MB chipdb for the xc7a35t (its SHA-256 matched the published index).
   - The package has no Yosys, but NanoLogic's bundled WebAssembly Yosys ran `synth_xilinx -arch xc7` on the Basys 3 starter in about 24 s, so synthesis would need nothing extra.
   - **Blocker:** running the downloaded native `nextpnr-xilinx` (and then `fasm2frames` / `xc7frames2bit`) was refused by this session's permission policy ("code from external"). I did not work around it, so place-and-route and bitstream generation are untested and I added no Build bitstream feature.
   - Design questions for you before anyone builds this: (1) the toolchain is far too big to put in the installer (739 MB per platform), so it would have to be downloaded on first use, which breaks the "works offline" rule for this one feature; (2) Intel Macs would not be supported; (3) licences of the bundled pieces (nextpnr and prjxray are ISC, prjxray-db is CC0; the rest of the package would need checking).
-  - To unblock: allow running these binaries in the session (or run them on your machine), then I can wire up an opt-in "Build bitstream (experimental)" that downloads and checks the toolchain.
+  - What phase 2 would need: permission to run the native tools (in CI or on a developer machine) to test place-and-route and bitstream generation, a decision on download-on-first-use versus a separate add-on installer, and a licence review of the whole package.
 
 ---
 

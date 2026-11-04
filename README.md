@@ -6,7 +6,7 @@ The Digilent Basys 3 is also supported as a second board (**experimental, not ye
 
 Everything runs inside the app. Students do not need to install a compiler, Icarus Verilog, Yosys or Quartus to use it.
 
-Status and open questions: [docs/progress.md](docs/progress.md). How the simulator was chosen: [docs/toolchain-decision.md](docs/toolchain-decision.md). Licences: [docs/licences.md](docs/licences.md).
+Status and open questions: [docs/progress.md](docs/progress.md). Lab test steps for real boards: [docs/hardware-test-checklist.md](docs/hardware-test-checklist.md). How the simulator was chosen: [docs/toolchain-decision.md](docs/toolchain-decision.md). Licences: [docs/licences.md](docs/licences.md).
 
 ## What you need (developers only)
 
@@ -114,6 +114,6 @@ npm run examples:export
 
 ## CI
 
-- Every push: Linux typecheck, unit tests, end-to-end tests, a packaged-app smoke test and screenshots (download them from the run's "Artifacts").
+- Every push: Linux typecheck, unit tests (including the virtual-board vs Icarus Verilog cross-check), end-to-end tests, a packaged-app smoke test and screenshots (download them from the run's "Artifacts").
 - The open pull request from `dev` to `main`, pushes to `main`, and manual runs: the same checks on macOS and Windows.
 - Manual runs, pushes to `main` and commits with `[installers]` in the message: unsigned macOS and Windows installers.
