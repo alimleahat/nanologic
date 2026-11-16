@@ -82,7 +82,10 @@ function loop() {
       if (n > 0) runSafely(n);
     }
   }
-  if (now - rateWindowStart >= 500) {
+  // At slow clocks a 500 ms window holds 0 or 1 cycles (shown as 0 or 2 Hz), so
+  // keep measuring until it holds a few cycles (or 5 s have passed).
+  const windowMs = now - rateWindowStart;
+  if (windowMs >= 500 && (speed === 'max' || rateWindowCycles >= 4 || windowMs >= 5000)) {
     actualHz = (rateWindowCycles * 1000) / (now - rateWindowStart);
     rateWindowStart = now;
     rateWindowCycles = 0;
@@ -124,6 +127,10 @@ parentPort?.on('message', (m: BoardWorkerRequest) => {
       if (m.running !== undefined) running = m.running && !!engine?.hasClock;
       owed = 0;
       last = performance.now();
+      // Until the first measurement, a paced clock runs at the speed it was set to.
+      rateWindowStart = last;
+      rateWindowCycles = 0;
+      actualHz = running && speed !== 'max' ? speed : 0;
       postState(true);
       schedule();
       break;
