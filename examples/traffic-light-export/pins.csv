@@ -1,0 +1,22 @@
+Port,Direction,Board signal,Pin,I/O standard,Level
+CLK_50MHz,input,MAX10_CLK1_50,PIN_P11,3.3-V LVTTL,50 MHz clock
+rst_n,input,KEY[1],PIN_A7,3.3 V SCHMITT TRIGGER,0 while pressed (active-low)
+pedestrian_btn,input,KEY[0],PIN_B8,3.3 V SCHMITT TRIGGER,0 while pressed (active-low)
+HexH[0],output,HEX1[0],PIN_C18,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[1],output,HEX1[1],PIN_D18,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[2],output,HEX1[2],PIN_E18,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[3],output,HEX1[3],PIN_B16,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[4],output,HEX1[4],PIN_A17,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[5],output,HEX1[5],PIN_A18,3.3-V LVTTL,segment lit when 0 (active-low)
+HexH[6],output,HEX1[6],PIN_B17,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[0],output,HEX0[0],PIN_C14,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[1],output,HEX0[1],PIN_E15,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[2],output,HEX0[2],PIN_C15,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[3],output,HEX0[3],PIN_C16,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[4],output,HEX0[4],PIN_E16,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[5],output,HEX0[5],PIN_D17,3.3-V LVTTL,segment lit when 0 (active-low)
+HexL[6],output,HEX0[6],PIN_C17,3.3-V LVTTL,segment lit when 0 (active-low)
+Green,output,LEDR[2],PIN_A10,3.3-V LVTTL,lit when 1
+Red,output,LEDR[0],PIN_A8,3.3-V LVTTL,lit when 1
+Amber,output,LEDR[1],PIN_A9,3.3-V LVTTL,lit when 1
+LEDR9,output,LEDR[9],PIN_B11,3.3-V LVTTL,lit when 1

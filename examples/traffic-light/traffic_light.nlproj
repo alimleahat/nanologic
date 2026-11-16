@@ -1,0 +1,160 @@
+{
+  "format": "nanologic-project",
+  "version": 1,
+  "name": "traffic_light",
+  "boardId": "de10-lite",
+  "topLevelEntity": "MainCode",
+  "designFiles": [
+    "rtl/BCD7Seg.v",
+    "rtl/BinaryBCD.v",
+    "rtl/ClockDivider.v",
+    "rtl/Comparator4.v",
+    "rtl/CoreLogic.v",
+    "rtl/CounterUnit.v",
+    "rtl/Decoder.v",
+    "rtl/FourBitFullAdder.v",
+    "rtl/MainCode.v",
+    "rtl/Mux.v",
+    "rtl/Mux2Way4.v",
+    "rtl/OneBitFullAdder.v",
+    "rtl/SevenSegDisplay.v",
+    "rtl/Subtractor.v"
+  ],
+  "testbenchFiles": [
+    "tb/legacy/BCD7Seg_tb.v",
+    "tb/legacy/BinaryBCD_tb.v",
+    "tb/legacy/ClockDivider_tb.v",
+    "tb/legacy/Comparator4_tb.v",
+    "tb/legacy/CoreLogic_tb.v",
+    "tb/legacy/CounterUnit_tb.v",
+    "tb/legacy/Decoder_tb.v",
+    "tb/legacy/FourBitFullAdder_tb.v",
+    "tb/legacy/MainCode_tb.v",
+    "tb/legacy/Mux2Way4_tb.v",
+    "tb/legacy/Mux_tb.v",
+    "tb/legacy/OneBitFullAdder_tb.v",
+    "tb/legacy/SevenSegDisplay_tb.v",
+    "tb/legacy/Subtractor_tb.v"
+  ],
+  "pinAssignments": [
+    {
+      "port": "CLK_50MHz",
+      "bit": null,
+      "board": "MAX10_CLK1_50"
+    },
+    {
+      "port": "rst_n",
+      "bit": null,
+      "board": "KEY[1]"
+    },
+    {
+      "port": "pedestrian_btn",
+      "bit": null,
+      "board": "KEY[0]"
+    },
+    {
+      "port": "HexH",
+      "bit": 0,
+      "board": "HEX1[0]"
+    },
+    {
+      "port": "HexH",
+      "bit": 1,
+      "board": "HEX1[1]"
+    },
+    {
+      "port": "HexH",
+      "bit": 2,
+      "board": "HEX1[2]"
+    },
+    {
+      "port": "HexH",
+      "bit": 3,
+      "board": "HEX1[3]"
+    },
+    {
+      "port": "HexH",
+      "bit": 4,
+      "board": "HEX1[4]"
+    },
+    {
+      "port": "HexH",
+      "bit": 5,
+      "board": "HEX1[5]"
+    },
+    {
+      "port": "HexH",
+      "bit": 6,
+      "board": "HEX1[6]"
+    },
+    {
+      "port": "HexL",
+      "bit": 0,
+      "board": "HEX0[0]"
+    },
+    {
+      "port": "HexL",
+      "bit": 1,
+      "board": "HEX0[1]"
+    },
+    {
+      "port": "HexL",
+      "bit": 2,
+      "board": "HEX0[2]"
+    },
+    {
+      "port": "HexL",
+      "bit": 3,
+      "board": "HEX0[3]"
+    },
+    {
+      "port": "HexL",
+      "bit": 4,
+      "board": "HEX0[4]"
+    },
+    {
+      "port": "HexL",
+      "bit": 5,
+      "board": "HEX0[5]"
+    },
+    {
+      "port": "HexL",
+      "bit": 6,
+      "board": "HEX0[6]"
+    },
+    {
+      "port": "Green",
+      "bit": null,
+      "board": "LEDR[2]"
+    },
+    {
+      "port": "Red",
+      "bit": null,
+      "board": "LEDR[0]"
+    },
+    {
+      "port": "Amber",
+      "bit": null,
+      "board": "LEDR[1]"
+    },
+    {
+      "port": "LEDR9",
+      "bit": null,
+      "board": "LEDR[9]"
+    }
+  ],
+  "exportLevel": 3,
+  "simulation": {
+    "maxTimeNs": 1000000,
+    "lastTestbench": "tb/legacy/CoreLogic_tb.v"
+  },
+  "virtualBoard": {
+    "bypass": [
+      {
+        "net": "clkdiv.CLK_1Hz",
+        "mode": "clock"
+      }
+    ],
+    "tieOffs": {}
+  }
+}
