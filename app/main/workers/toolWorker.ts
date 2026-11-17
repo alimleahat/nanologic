@@ -3,12 +3,14 @@
 import { parentPort } from 'node:worker_threads';
 import { analyseProject } from '../toolchain/analysis';
 import { buildBoardNetlist } from '../toolchain/boardNetlist';
+import { buildRtlView } from '../toolchain/rtlNetlist';
 import { simulateTestbench } from '../toolchain/simulation';
 
 export type ToolRequest =
   | { id: number; kind: 'analyse'; args: Parameters<typeof analyseProject> }
   | { id: number; kind: 'simulate'; args: Parameters<typeof simulateTestbench> }
-  | { id: number; kind: 'boardNetlist'; args: Parameters<typeof buildBoardNetlist> };
+  | { id: number; kind: 'boardNetlist'; args: Parameters<typeof buildBoardNetlist> }
+  | { id: number; kind: 'rtlNetlist'; args: Parameters<typeof buildRtlView> };
 
 export type ToolResponse = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
 
@@ -17,6 +19,7 @@ parentPort?.on('message', async (req: ToolRequest) => {
     let result: unknown;
     if (req.kind === 'analyse') result = await analyseProject(req.args[0], req.args[1], req.args[2]);
     else if (req.kind === 'simulate') result = await simulateTestbench(...req.args);
+    else if (req.kind === 'rtlNetlist') result = await buildRtlView(req.args[0], req.args[1], req.args[2], req.args[3]);
     else result = await buildBoardNetlist(req.args[0], req.args[1], req.args[2]);
     parentPort!.postMessage({ id: req.id, ok: true, result } satisfies ToolResponse);
   } catch (e) {

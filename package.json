@@ -38,6 +38,7 @@
     "@vitejs/plugin-react": "5.2.0",
     "electron": "42.11.18",
     "electron-builder": "26.0.12",
+    "elkjs": "0.11.1",
     "esbuild": "0.25.12",
     "monaco-editor": "0.54.0",
     "react": "19.2.0",
@@ -50,7 +51,7 @@
   "build": {
     "appId": "app.nanologic.desktop",
     "productName": "NanoLogic",
-    "copyright": "Copyright \u00a9 2026 Ali Mleahat",
+    "copyright": "Copyright © 2026 Ali Mleahat",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -82,6 +83,10 @@
       {
         "from": "tests/fixtures/digilent-xdc/License.txt",
         "to": "licences/digilent-xdc-MIT.txt"
+      },
+      {
+        "from": "node_modules/elkjs/LICENSE.md",
+        "to": "licences/elkjs-EPL-2.0.md"
       }
     ],
     "mac": {

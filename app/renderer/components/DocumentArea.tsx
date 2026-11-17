@@ -1,6 +1,7 @@
 import { BoardView } from '../board/BoardView';
 import { VerilogEditor } from '../editor/VerilogEditor';
 import { PinAssignments } from '../pins/PinAssignments';
+import { RtlViewer } from '../rtl/RtlViewer';
 import { activate, closeDoc } from '../state/actions';
 import { useStore } from '../state/store';
 import { WaveformViewer } from '../waveform/WaveformViewer';
@@ -49,6 +50,7 @@ export function DocumentArea() {
         {doc?.kind === 'waveform' && <WaveformViewer key={doc.id} doc={doc} />}
         {doc?.kind === 'board' && <BoardView />}
         {doc?.kind === 'pins' && <PinAssignments />}
+        {doc?.kind === 'rtl' && <RtlViewer />}
       </div>
     </div>
   );

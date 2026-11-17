@@ -5,8 +5,10 @@ import type { BoardStartResult, BoardState, ExampleInfo, OpenedProject } from '@
 import type { Message } from '@shared/messages';
 import type { SimNetInfo } from '@shared/netsim/compile';
 import type { BoardWiringReport } from '@shared/netsim/boardEngine';
+import type { RtlMode, RtlNetlistResult } from '@shared/rtl/netlist';
 import type { AnalysisResult, TopPort } from '@shared/toolTypes';
 import type { VcdData } from '@shared/vcd';
+import type { HierarchyNode } from '@shared/verilogScan';
 
 export type TaskId = 'analysis' | 'simulation' | 'board' | 'export';
 export type TaskStatus = 'idle' | 'running' | 'passed' | 'failed';
@@ -16,7 +18,8 @@ export type Doc =
   | { id: string; kind: 'editor'; title: string; path: string; rel: string; text: string; saved: string }
   | { id: string; kind: 'waveform'; title: string; vcd: VcdData; testbench: string }
   | { id: 'board'; kind: 'board'; title: string }
-  | { id: 'pins'; kind: 'pins'; title: string };
+  | { id: 'pins'; kind: 'pins'; title: string }
+  | { id: 'rtl'; kind: 'rtl'; title: string };
 
 export type DialogId = 'newProject' | 'import' | 'export' | 'simulate' | 'newFile' | 'about' | 'settings';
 
@@ -30,6 +33,18 @@ export interface BoardUiState {
   inputs: Record<string, number>;
 }
 
+export interface RtlUiState {
+  mode: RtlMode;
+  /** Instance names from the top-level module down to the module on screen. */
+  path: string[];
+  building: boolean;
+  /** Bumped whenever saved design files or the project's file list change. */
+  version: number;
+  results: Partial<Record<RtlMode, RtlNetlistResult & { version: number }>>;
+}
+
+export const initialRtl: RtlUiState = { mode: 'rtl', path: [], building: false, version: 0, results: {} };
+
 export interface AppState {
   project?: OpenedProject;
   docs: Doc[];
@@ -37,6 +52,9 @@ export interface AppState {
   messages: Message[];
   tasks: Record<TaskId, TaskStatus>;
   analysis?: AnalysisResult;
+  /** Module tree from the saved design files (no Analysis run needed). */
+  hierarchy?: HierarchyNode;
+  rtl: RtlUiState;
   ports: TopPort[];
   statusText: string;
   rightPanelOpen: boolean;
@@ -55,6 +73,7 @@ export const initialState: AppState = {
   messages: [],
   tasks: { analysis: 'idle', simulation: 'idle', board: 'idle', export: 'idle' },
   ports: [],
+  rtl: initialRtl,
   statusText: 'Ready',
   rightPanelOpen: false,
   navigatorTab: 'files',

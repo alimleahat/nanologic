@@ -6,7 +6,9 @@ import type { Message, MessageSource } from '@shared/messages';
 import { defaultBoardInputs } from '@shared/netsim/boardEngine';
 import { autoMap, validatePins } from '@shared/pins';
 import type { ExportLevel, NanoLogicProject } from '@shared/project';
-import { store, type DialogId, type Doc, type TaskId, type TaskStatus } from './store';
+import type { RtlMode } from '@shared/rtl/netlist';
+import { buildHierarchy, scanModules } from '@shared/verilogScan';
+import { initialRtl, store, type DialogId, type Doc, type TaskId, type TaskStatus } from './store';
 import { parseVcdInWorker } from '../waveform/vcdClient';
 
 const api = () => window.nanologic;
@@ -69,8 +71,12 @@ async function setProject(opened: OpenedProject) {
     tasks: { analysis: 'idle', simulation: 'idle', board: 'idle', export: 'idle' },
     statusText: `Opened ${opened.project.name}`,
     navigatorTab: 'hierarchy',
+    hierarchy: undefined,
+    rtl: initialRtl,
     board: { started: false, starting: false, nets: [], inputs: defaultBoardInputs(getBoard(opened.project.boardId)) },
   }));
+  savedTexts.clear();
+  void refreshHierarchy();
   const top = opened.project.designFiles.find((f) => /\.s?v$/i.test(f) && f.split('/').pop()?.replace(/\.s?v$/i, '') === opened.project.topLevelEntity);
   if (top) await openFile(top);
   void loadStartupData();
@@ -89,10 +95,13 @@ export async function closeProject(silent = false) {
     active: 'welcome',
     messages: [],
     analysis: undefined,
+    hierarchy: undefined,
+    rtl: initialRtl,
     ports: [],
     board: { started: false, starting: false, nets: [], inputs: {} },
     statusText: 'Ready',
   });
+  savedTexts.clear();
 }
 
 export async function newProject(opts: NewProjectOptions) {
@@ -133,13 +142,15 @@ export async function openExample(id: string) {
 export async function updateProject(fn: (p: NanoLogicProject) => NanoLogicProject) {
   const s = store.get();
   if (!s.project) return;
-  const project = fn(s.project.project);
+  const before = s.project.project;
+  const project = fn(before);
   store.set({ project: { ...s.project, project } });
   try {
     await api().saveProject(s.project.path, project);
   } catch (e) {
     reportError('project', e);
   }
+  if (before.topLevelEntity !== project.topLevelEntity || before.designFiles.join('\n') !== project.designFiles.join('\n')) sourcesChanged();
 }
 
 export async function addExistingFiles(kind: 'design' | 'testbench') {
@@ -205,6 +216,94 @@ export function activate(id: string) {
   store.set({ active: id });
 }
 
+// ---------------------------------------------------------------------------
+// Hierarchy (from the saved files, without running the toolchain)
+
+/** Saved text of design files, by project-relative path. */
+const savedTexts = new Map<string, string>();
+let hierarchyRun = 0;
+
+export async function refreshHierarchy() {
+  const s = store.get();
+  if (!s.project) return;
+  const run = ++hierarchyRun;
+  const { project, dir } = s.project;
+  const scanned = [];
+  for (const rel of project.designFiles) {
+    let text = savedTexts.get(rel);
+    if (text === undefined) {
+      try {
+        text = await api().readFile(joinPath(dir, rel));
+        savedTexts.set(rel, text);
+      } catch {
+        continue; // A missing file is reported by Analysis.
+      }
+    }
+    scanned.push(...scanModules(text).map((module) => ({ module, file: rel })));
+  }
+  if (run !== hierarchyRun || store.get().project?.dir !== dir) return;
+  store.set({ hierarchy: buildHierarchy(project.topLevelEntity, scanned) });
+}
+
+/** Saved sources or the file list changed: update the hierarchy and an open RTL Viewer. */
+function sourcesChanged() {
+  store.set((s) => ({ rtl: { ...s.rtl, version: s.rtl.version + 1 } }));
+  void refreshHierarchy();
+  if (store.get().docs.some((d) => d.kind === 'rtl')) void loadRtl();
+}
+
+// ---------------------------------------------------------------------------
+// RTL Viewer
+
+/** Open the RTL Viewer, optionally inside the module at `path` (instance names from the top). */
+export function openRtlViewer(path?: string[]) {
+  if (!store.get().project) return;
+  store.set((s) => ({
+    docs: s.docs.some((d) => d.id === 'rtl') ? s.docs : [...s.docs, { id: 'rtl', kind: 'rtl', title: 'RTL Viewer' }],
+    active: 'rtl',
+    rtl: { ...s.rtl, path: path ?? s.rtl.path },
+  }));
+  void loadRtl();
+}
+
+export function setRtlPath(path: string[]) {
+  store.set((s) => ({ rtl: { ...s.rtl, path } }));
+}
+
+export function setRtlMode(mode: RtlMode) {
+  store.set((s) => ({ rtl: { ...s.rtl, mode } }));
+  void loadRtl();
+}
+
+const rtlPending = new Set<string>();
+
+/** Build the netlist for the current view unless an up-to-date one is cached. */
+export async function loadRtl(force = false) {
+  const s = store.get();
+  if (!s.project) return;
+  const { mode, version } = s.rtl;
+  const cached = s.rtl.results[mode];
+  if (!force && cached && cached.version === version) return;
+  const key = `${mode}|${version}|${force}`;
+  if (rtlPending.has(key)) return;
+  rtlPending.add(key);
+  store.set((st) => ({ rtl: { ...st.rtl, building: true } }));
+  setStatus(`RTL Viewer: building the ${mode === 'rtl' ? 'RTL' : 'gate-level'} netlist...`);
+  const dir = s.project.dir;
+  try {
+    const r = await api().rtlNetlist(dir, s.project.project, mode, unsavedTexts());
+    if (store.get().project?.dir !== dir) return;
+    replaceMessages(['rtl'], r.messages);
+    store.set((st) => ({ rtl: { ...st.rtl, results: { ...st.rtl.results, [mode]: { ...r, version } } } }));
+    setStatus(r.ok ? `RTL Viewer: netlist ready (${(r.durationMs / 1000).toFixed(1)} s)` : 'RTL Viewer: the netlist could not be built. See Messages.');
+  } catch (e) {
+    reportError('rtl', e);
+  } finally {
+    rtlPending.delete(key);
+    store.set((st) => ({ rtl: { ...st.rtl, building: rtlPending.size > 0 } }));
+  }
+}
+
 export function openSingleton(kind: 'board' | 'pins' | 'welcome') {
   const boardId = store.get().project?.project.boardId;
   const boardName = boardId ? getBoard(boardId).name.replace(/^(Terasic|Digilent) /, '') : 'Board';
@@ -247,6 +346,8 @@ export async function saveDoc(id?: string) {
   try {
     await api().writeFile(doc.path, doc.text);
     store.set((st) => ({ docs: st.docs.map((d) => (d.id === doc.id && d.kind === 'editor' ? { ...d, saved: doc.text } : d)), statusText: `Saved ${doc.rel}` }));
+    savedTexts.set(doc.rel, doc.text);
+    if (s.project?.project.designFiles.includes(doc.rel)) sourcesChanged();
   } catch (e) {
     reportError('project', e);
   }

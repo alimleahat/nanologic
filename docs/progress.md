@@ -1,6 +1,44 @@
 # Progress
 
-Last updated: 4 Nov 2026. **Feature freeze**: from now on only fixes from the lab tests (see `docs/hardware-test-checklist.md`). The DE10-Lite notes from 30 Oct follow after the Basys 3 section.
+Last updated: 17 Nov 2026. **Feature freeze**: from now on only fixes from the lab tests (see `docs/hardware-test-checklist.md`). The one exception so far is the RTL Viewer and the Hierarchy fix below, added on request on the `rtl-viewer` branch. The DE10-Lite notes from 30 Oct follow after the Basys 3 section.
+
+## RTL Viewer and Hierarchy fix (17 Nov 2026, branch `rtl-viewer`)
+
+![RTL Viewer: top level of the traffic light](screenshots/rtl-viewer-top.png)
+
+### What works
+
+- **Hierarchy tab without Analysis.** The module tree is built from the saved design files as soon as a project opens, and rebuilt whenever a design file is saved or the file list or top-level entity changes. It uses NanoLogic's own forgiving scanner, so it also works while the code has errors. Before, it only appeared after a full Analysis run and went stale after saving. Right-click a module for **Open in RTL Viewer**, **Open Module Source** or **Go to Instantiation** (the line in the parent module).
+- **Opening the viewer**: Tools > Netlist Viewers > RTL Viewer (a tab, like Quartus), or right-click a module in the Hierarchy tab to open the viewer inside that module.
+- **Top level**: each module instance is a block showing its instance name, module name and input/output ports. Wires run between them, and the module's own ports are drawn as pins on the left and right. Buses are drawn thicker and labelled with the signal name (`ControlSignal`, `Count`, `phase[0]`...). Constants are small boxes (`4'b1001`).
+- **Drill in and back**: double-click a block (or right-click > Open Inside) to see the inside of that module. The breadcrumb (`MainCode › core (CoreLogic) › Counter1 (CounterUnit)`) goes back up.
+- **Inside a module (RTL view)**: registers (with D, CLK triangle, reset/enable pins and a bubble when active-low), multiplexers (`?:`, `if`; a `case` statement is one multiplexer with one input per case), adders and other operators (`+`, `=`, `<`...), gates (AND, OR, XOR, NOT, with `&&`, `!` etc. marked), latches, and sub-module instances, with signal names.
+- **Gate view** (Gates button): everything broken down to AND, OR, NOT, XOR and flip-flops (and the latch that `BCD7Seg` really has). Yosys's `techmap`, then a small mapping file that rewrites the remaining MUX, NAND, NOR, XNOR, ANDNOT, ORNOT and AOI/OAI cells into AND/OR/XOR/NOT. Hierarchy is kept in both views.
+- **Navigation**: drag or scroll to pan; Ctrl/Cmd + scroll (or a trackpad pinch) to zoom, as in Quartus; zoom buttons and Fit (keys `+`, `-`, `F`). For a drawing too big to read when fitted (the gate view of the 26-bit clock divider), Fit fits the width and starts at the top.
+- **Highlighting**: click a wire, pin or block. Everything connected stays black and the rest fades. The bar at the bottom says what it is, e.g. `Signal CLK_1Hz (1 bit) · from Instance clkdiv of ClockDivider · 1 load`.
+- **Jump to source**: double-click a register, gate, multiplexer, operator or wire to open its line in the editor (from Yosys's `src` attributes, e.g. register `phase` → `rtl/CoreLogic.v` line 50). Pins go to their declaration.
+- **Offline**: the netlist comes from the bundled Yosys (`hierarchy`, `proc -norom`, `opt_clean`; plus `techmap` for the gate view) in the existing toolchain worker. The layout runs in its own web worker with elkjs, which is bundled. The traffic light builds in about 1 s; laying out a module takes 10-250 ms in the RTL view, and 0.6 s for the largest gate view (ClockDivider, 396 symbols).
+- **Style**: black on white with the existing theme tokens; colour is not used.
+- **Licences**: elkjs 0.11.1 is EPL-2.0 and is recorded in `docs/licences.md`, shipped as `resources/licences/elkjs-EPL-2.0.md` and mentioned in the About box. netlistsvg was evaluated (MIT, but unmaintained since 2022 and static SVG only) and not used; the reasons are in `docs/licences.md`.
+- **Tests**: `tests/unit/rtl-viewer.test.ts` (11 tests) checks the viewer's netlist for the starter example and all 14 traffic-light modules: module list, every port with its width, instances, the top-level wiring, CoreLogic's registers, adder and multiplexers, that the gate view contains only AND/OR/XOR/NOT and flip-flops, that every instance's pins match its module, and that every module lays out with all wires routed and no overlapping symbols. `tests/e2e/rtl-viewer.spec.ts` opens the viewer from the menu, highlights a wire, zooms, drills into `core` and back, double-clicks a register to reach its line, switches to the gate view, and opens `Counter1` from the Hierarchy tab. It also checks that the hierarchy appears before Analysis finishes and follows a saved edit. The packaged-app test now opens the RTL Viewer too. Its screenshots are saved as CI artifacts (`screenshots-linux`, and the macOS/Windows ones on pull-request runs): `test-results/screenshots/<os>-10-rtl-viewer-top.png` to `<os>-14-rtl-viewer-from-hierarchy.png`, plus `<os>-packaged-rtl-viewer.png`.
+
+| | |
+|---|---|
+| ![Inside CoreLogic](screenshots/rtl-viewer-corelogic.png) | ![Gate view of CoreLogic](screenshots/rtl-viewer-gates.png) |
+| Inside `core` (CoreLogic): registers `phase` and `ped`, the `+1` adder, multiplexers, gates and the four sub-modules | Gate view of the same module |
+| ![Highlighted wire](screenshots/rtl-viewer-highlight.png) | ![CounterUnit opened from the Hierarchy tab](screenshots/rtl-viewer-counterunit.png) |
+| Clicking `CLK_1Hz` highlights its connections | `Counter1` opened by right-clicking it in the Hierarchy tab |
+
+### What does not work / limitations
+
+- **Buses that are split or joined** (e.g. `assign ControlSignal = {phase, Count}`) are drawn as separate wires into the same pin, each labelled with its own signal name. Quartus draws small split/join symbols instead; which bits go where is in the label and the bottom bar, not drawn.
+- **Unsaved edits** are not picked up automatically: the viewer follows saved files (like the hierarchy). **Refresh** rebuilds from what is on screen, including unsaved edits.
+- **Large gate views** are big: the gate view of `ClockDivider` (a 25-bit counter and comparator) has 342 gates and flip-flops. It works and stays responsive, but the RTL view is the better overview; the status line says so.
+- **Generated names**: in the gate view most internal wires have no source name, so only the original signal names are shown. Yosys's internal names are hidden.
+- **Parameterised modules** show as `Name (PARAM=value)` (Yosys makes one copy per parameter set). Arrays of instances and `generate` blocks are shown as Yosys elaborates them, one block per instance.
+- **Testbenches** are not shown; the viewer starts from the top-level entity.
+- **No printing or export** of the schematic yet.
+
 
 ## Simulator cross-check (permanent CI test)
 

@@ -106,6 +106,14 @@ button {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
+.menu-submenu-host {
+  position: relative;
+}
+.menu-popup.submenu {
+  top: calc(-1 * var(--space-xs) - var(--size-border-width));
+  left: 100%;
+  min-width: 180px;
+}
 .menu-separator {
   height: 1px;
   background: var(--color-border);
@@ -605,4 +613,201 @@ button {
 }
 .notice.error {
   border-color: var(--color-error);
+}
+
+/* ---- RTL Viewer ---- */
+.rtl-viewer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rtl-toolbar {
+  flex-shrink: 0;
+  border-bottom: var(--size-border-width) solid var(--color-border);
+}
+.rtl-crumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.rtl-crumb {
+  border: none;
+  background: none;
+  padding: var(--space-xxs) var(--space-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rtl-crumb.current,
+.rtl-crumb:disabled {
+  text-decoration: none;
+  font-weight: 600;
+  cursor: default;
+  color: var(--color-text);
+}
+.segmented {
+  display: flex;
+}
+.segmented .btn + .btn {
+  margin-left: calc(-1 * var(--size-border-width));
+}
+.rtl-status {
+  font-size: var(--font-size-sm);
+  margin-left: var(--space-sm);
+  white-space: nowrap;
+}
+.rtl-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rtl-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-bg-subtle);
+  outline: none;
+  cursor: grab;
+}
+.rtl-canvas:active {
+  cursor: grabbing;
+}
+.rtl-canvas svg {
+  display: block;
+}
+.rtl-zoom {
+  position: absolute;
+  right: var(--space-sm);
+  bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--color-bg);
+  border: var(--size-border-width) solid var(--color-border);
+  padding: var(--space-xxs);
+}
+.rtl-zoom-value {
+  min-width: 42px;
+  text-align: center;
+  font-size: var(--font-size-xs);
+}
+.rtl-info {
+  flex-shrink: 0;
+  height: var(--size-row-height);
+  line-height: var(--size-row-height);
+  padding: 0 var(--space-sm);
+  border-top: var(--size-border-width) solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+}
+.rtl-body {
+  fill: var(--color-bg);
+  stroke: var(--color-text);
+  stroke-width: 1.2;
+}
+.rtl-body.rtl-module {
+  stroke-width: 1.6;
+}
+.rtl-line {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1.2;
+}
+.rtl-line.faint {
+  stroke: var(--color-border);
+}
+.rtl-const {
+  fill: var(--color-bg);
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+.rtl-node {
+  cursor: pointer;
+}
+.rtl-name {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-text);
+}
+.rtl-detail {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  fill: var(--color-text-secondary);
+}
+.rtl-pin-label,
+.rtl-io,
+.rtl-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--color-text);
+}
+.rtl-pin-label.small {
+  font-size: 8px;
+  fill: var(--color-text-secondary);
+}
+.rtl-label {
+  fill: var(--color-text-secondary);
+}
+.rtl-label-bg {
+  fill: var(--color-bg-subtle);
+}
+.rtl-op {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  fill: var(--color-text);
+}
+.rtl-op-small {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  fill: var(--color-text);
+}
+.rtl-wire {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1;
+}
+.rtl-edge.bus .rtl-wire {
+  stroke-width: 2.2;
+}
+.rtl-wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 8;
+  cursor: pointer;
+}
+.rtl-junction {
+  fill: var(--color-text);
+}
+.rtl-pin-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.rtl-pin-hl {
+  fill: var(--color-text);
+}
+.rtl-dim {
+  opacity: 0.16;
+}
+.rtl-hl .rtl-wire {
+  stroke-width: 2.2;
+}
+.rtl-hl.bus .rtl-wire {
+  stroke-width: 3.6;
+}
+.rtl-hl .rtl-body {
+  stroke-width: 2;
+}
+.rtl-hl .rtl-label {
+  fill: var(--color-text);
+  font-weight: 600;
 }
