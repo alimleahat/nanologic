@@ -9,6 +9,7 @@ import {
   openExample,
   openProjectDialog,
   openProjectPath,
+  openRtlViewer,
   openSingleton,
   removeFromProject,
   runAnalysis,
@@ -28,6 +29,7 @@ interface Entry {
   enabled?: boolean;
   separator?: boolean;
   testId?: string;
+  submenu?: Entry[];
 }
 
 const isMac = () => window.nanologic?.platform === 'darwin';
@@ -35,6 +37,8 @@ const mod = (k: string) => (isMac() ? `⌘${k}` : `Ctrl+${k}`);
 
 export function MenuBar({ refs }: { refs: PanelRefs }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [sub, setSub] = useState<number | null>(null);
+  useEffect(() => setSub(null), [open]);
   const ref = useRef<HTMLDivElement>(null);
   const project = useStore((s) => s.project);
   const docs = useStore((s) => s.docs);
@@ -139,6 +143,12 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
     [
       'Tools',
       [
+        {
+          label: 'Netlist Viewers',
+          testId: 'menu-netlist-viewers',
+          submenu: [{ label: 'RTL Viewer', action: () => openRtlViewer(), enabled: hasProject, testId: 'menu-rtl-viewer' }],
+        },
+        { separator: true, label: '' },
         { label: 'Pin Planner', action: () => openSingleton('pins'), enabled: hasProject },
         { label: 'Virtual DE10-Lite', action: () => openSingleton('board'), enabled: hasProject },
         { label: `Export to ${tool}...`, action: () => openDialog('export'), enabled: hasProject },
@@ -178,6 +188,33 @@ export function MenuBar({ refs }: { refs: PanelRefs }) {
               {entries.map((e, i) =>
                 e.separator ? (
                   <div className="menu-separator" key={i} />
+                ) : e.submenu ? (
+                  <div key={i} className="menu-submenu-host" onMouseEnter={() => setSub(i)} onMouseLeave={() => setSub(null)}>
+                    <button className="menu-entry" role="menuitem" aria-haspopup="menu" data-testid={e.testId} onClick={() => setSub(sub === i ? null : i)}>
+                      <span>{e.label}</span>
+                      <span className="shortcut">▸</span>
+                    </button>
+                    {sub === i && (
+                      <div className="menu-popup submenu" role="menu">
+                        {e.submenu.map((se, j) => (
+                          <button
+                            key={j}
+                            className="menu-entry"
+                            role="menuitem"
+                            data-testid={se.testId}
+                            disabled={se.enabled === false}
+                            onClick={() => {
+                              setOpen(null);
+                              setSub(null);
+                              se.action?.();
+                            }}
+                          >
+                            <span>{se.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <button
                     key={i}

@@ -9,6 +9,7 @@ import type { Message } from '../shared/messages';
 import { PROJECT_EXTENSION, type ExportLevel, type NanoLogicProject } from '../shared/project';
 import { generateBoardExport } from '../shared/boardExport';
 import type { AnalysisResult, SimulationResult } from '../shared/toolTypes';
+import type { RtlMode, RtlNetlistResult } from '../shared/rtl/netlist';
 import { copyTree, createNewProject, exists, importFolder, openProjectFile, RecentProjects, saveProjectFile, scanImport, writeFileAtomic } from './projectFs';
 import { writeExport } from './exportFs';
 import { ToolClient, workerPath } from './toolClient';
@@ -280,6 +281,9 @@ function registerIpc() {
 
   ipcMain.handle('tools:analyse', (_e, dir: string, project: NanoLogicProject, unsaved: Record<string, string>) =>
     tools.run<AnalysisResult>('analyse', [dir, project, unsaved]),
+  );
+  ipcMain.handle('tools:rtl', (_e, dir: string, project: NanoLogicProject, mode: RtlMode, unsaved: Record<string, string>) =>
+    tools.run<RtlNetlistResult>('rtlNetlist', [dir, project, mode, unsaved]),
   );
   ipcMain.handle(
     'tools:simulate',

@@ -10,7 +10,7 @@ const exe = process.env.NANOLOGIC_PACKAGED;
 
 test.skip(!exe, 'set NANOLOGIC_PACKAGED to the packaged executable');
 
-test('packaged app opens the reference project, analyses, simulates and runs the board', async () => {
+test('packaged app opens the reference project, analyses, simulates, runs the board and the RTL Viewer', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'nanologic-pkg-'));
   const app = await electron.launch({
     executablePath: exe!,
@@ -32,5 +32,12 @@ test('packaged app opens the reference project, analyses, simulates and runs the
   await expect(page.getByTestId('task-board')).toHaveAttribute('data-status', 'passed', { timeout: 120_000 });
   await expect(page.getByTestId('board-LEDR0')).toHaveAttribute('data-lit', '1');
   await screenshot(page, 'packaged-board');
+  // The RTL Viewer runs Yosys and the layout worker from the installed files.
+  await page.getByTestId('menu-tools').click();
+  await page.getByTestId('menu-netlist-viewers').hover();
+  await page.getByTestId('menu-rtl-viewer').click();
+  await expect(page.getByTestId('rtl-canvas')).toHaveAttribute('data-ready', '1', { timeout: 120_000 });
+  await expect(page.getByTestId('rtl-node-core')).toBeVisible();
+  await screenshot(page, 'packaged-rtl-viewer');
   await app.close();
 });

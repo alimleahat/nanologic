@@ -21,9 +21,27 @@ Everything that ships inside the NanoLogic installer, and its licence. Update th
 | Inter font (@fontsource/inter) | SIL Open Font License 1.1 |
 | JetBrains Mono font (@fontsource/jetbrains-mono) | SIL Open Font License 1.1 |
 
+## RTL Viewer layout (bundled into the app)
+
+| Component | Version | Licence | Closed-source bundling | Notes |
+|---|---|---|---|---|
+| elkjs (Eclipse Layout Kernel for JavaScript, npm `elkjs`) | 0.11.1 | **EPL-2.0** (offered as "EPL-2.0 OR GPL-3.0-or-later"; NanoLogic uses it under EPL-2.0) | Allowed: EPL-2.0 is file-level ("weak") copyleft. NanoLogic's own code only calls elkjs and is not a modification of it, so it stays closed. Conditions: ship the licence text, say where the elkjs source is, and publish the source of any change we make to elkjs itself (we use it unmodified). **To be confirmed by Ali / university IP office**, like the Icarus Verilog entry. | Positions the RTL Viewer's symbols and routes its wires; runs in a web worker (`elk-worker.min.js`). Licence text shipped as `resources/licences/elkjs-EPL-2.0.md`. Source: https://github.com/kieler/elkjs (tag `0.11.1`) and https://github.com/eclipse/elk |
+
+The RTL Viewer's symbols and drawing are NanoLogic's own code. The netlist comes from the bundled Yosys (above).
+
+### Evaluated and not used: netlistsvg
+
+netlistsvg 1.0.2 (npm `netlistsvg`, https://github.com/nturley/netlistsvg) is **MIT**, so its licence would have been fine. It was not used because:
+
+- it is unmaintained (last release May 2022) and pins elkjs 0.3.0 (2018), json5 0.5, yargs 6 and fs-extra 1, which would pull old, partly vulnerable packages into the app;
+- it draws one module to a static SVG string: no click-to-highlight, no double-click into a module or to the source line, no zoom or pan, and styling only through its own "skin" SVG rather than the app's theme tokens;
+- the part NanoLogic needs (ELK layered layout with fixed pin positions) is a few dozen lines on top of current elkjs.
+
+NanoLogic therefore uses elkjs directly (the same layout engine netlistsvg uses) with its own React symbols. The comparison was made on the traffic-light reference project.
+
 ## Build and test tools only (not shipped)
 
-Vite, esbuild, TypeScript, Vitest, Playwright, electron-builder: all MIT or Apache-2.0.
+Vite, esbuild, TypeScript, Vitest, Playwright, electron-builder: all MIT or Apache-2.0. (Unit tests also use elkjs's single-file build, `elk.bundled.js`, from the same package.)
 
 ## Board data
 

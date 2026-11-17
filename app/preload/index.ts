@@ -26,6 +26,7 @@ const api: NanoLogicApi = {
   createSourceFile: (dir, rel, text) => ipcRenderer.invoke('fs:createSource', dir, rel, text),
   pickSourceFiles: (dir) => ipcRenderer.invoke('fs:pickSources', dir),
   analyse: (dir, project, unsaved) => ipcRenderer.invoke('tools:analyse', dir, project, unsaved),
+  rtlNetlist: (dir, project, mode, unsaved) => ipcRenderer.invoke('tools:rtl', dir, project, mode, unsaved),
   simulate: (dir, project, tb, maxTimeNs, unsaved) => ipcRenderer.invoke('tools:simulate', dir, project, tb, maxTimeNs, unsaved),
   boardStart: (dir, project, unsaved) => ipcRenderer.invoke('board:start', dir, project, unsaved),
   boardSetInputs: (inputs) => ipcRenderer.send('board:inputs', inputs),

@@ -1,6 +1,6 @@
 export type Severity = 'error' | 'warning' | 'info';
 
-export type MessageSource = 'analysis' | 'simulation' | 'board' | 'export' | 'project' | 'pins';
+export type MessageSource = 'analysis' | 'simulation' | 'board' | 'export' | 'project' | 'pins' | 'rtl';
 
 export interface Message {
   severity: Severity;

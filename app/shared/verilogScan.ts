@@ -324,8 +324,12 @@ export function findTopCandidates(modules: ScannedModule[]): string[] {
 export interface HierarchyNode {
   module: string;
   instance?: string;
+  /** Where the module is defined. */
   file?: string;
   line?: number;
+  /** Where this instance is created (in the parent module's file). */
+  instanceFile?: string;
+  instanceLine?: number;
   missing?: boolean;
   children: HierarchyNode[];
 }
@@ -336,13 +340,17 @@ export function buildHierarchy(
   depthLimit = 32,
 ): HierarchyNode {
   const byName = new Map(modules.map((m) => [m.module.name, m]));
-  const walk = (name: string, instance: string | undefined, depth: number, seen: Set<string>): HierarchyNode => {
+  const walk = (name: string, instance: ScannedInstance | undefined, parentFile: string | undefined, depth: number, seen: Set<string>): HierarchyNode => {
     const entry = byName.get(name);
-    const node: HierarchyNode = { module: name, instance, file: entry?.file, line: entry?.module.line, missing: !entry, children: [] };
+    const node: HierarchyNode = { module: name, instance: instance?.instanceName, file: entry?.file, line: entry?.module.line, missing: !entry, children: [] };
+    if (instance) {
+      node.instanceFile = parentFile;
+      node.instanceLine = instance.line;
+    }
     if (!entry || depth > depthLimit || seen.has(name)) return node;
     const next = new Set(seen).add(name);
-    node.children = entry.module.instances.map((i) => walk(i.moduleName, i.instanceName, depth + 1, next));
+    node.children = entry.module.instances.map((i) => walk(i.moduleName, i, entry.file, depth + 1, next));
     return node;
   };
-  return walk(top, undefined, 0, new Set());
+  return walk(top, undefined, undefined, 0, new Set());
 }

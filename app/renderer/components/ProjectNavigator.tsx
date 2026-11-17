@@ -1,19 +1,35 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import type { HierarchyNode } from '@shared/verilogScan';
-import { openFile } from '../state/actions';
+import { openFile, openRtlViewer } from '../state/actions';
 import { store, useStore } from '../state/store';
+import { useContextMenu, type ContextMenuItem } from './ContextMenu';
 
-function HierarchyRow({ node, depth }: { node: HierarchyNode; depth: number }) {
+type ShowMenu = (e: MouseEvent, items: ContextMenuItem[]) => void;
+
+function HierarchyRow({ node, depth, path, showMenu }: { node: HierarchyNode; depth: number; path: string[]; showMenu: ShowMenu }) {
   const [open, setOpen] = useState(depth < 2);
   const hasChildren = node.children.length > 0;
+  const menu = (e: MouseEvent) =>
+    showMenu(e, [
+      { label: 'Open in RTL Viewer', action: () => openRtlViewer(path), enabled: !node.missing, testId: 'ctx-rtl-viewer' },
+      { label: 'Open Module Source', action: () => node.file && void openFile(node.file, node.line), enabled: !!node.file, testId: 'ctx-open-source' },
+      {
+        label: 'Go to Instantiation',
+        action: () => node.instanceFile && void openFile(node.instanceFile, node.instanceLine),
+        enabled: !!node.instanceFile,
+        testId: 'ctx-open-instance',
+      },
+    ]);
   return (
     <>
       <div
         className="tree-row"
         style={{ paddingLeft: 4 + depth * 14 }}
         data-testid={`hier-${node.instance ?? node.module}`}
+        data-path={path.join('/')}
         title={node.file ? `${node.file}:${node.line}` : 'Module not found in the project files'}
         onDoubleClick={() => node.file && void openFile(node.file, node.line)}
+        onContextMenu={menu}
       >
         <span className="twisty" onClick={() => setOpen(!open)}>
           {hasChildren ? (open ? '▾' : '▸') : ''}
@@ -21,7 +37,10 @@ function HierarchyRow({ node, depth }: { node: HierarchyNode; depth: number }) {
         <span className={node.missing ? 'error-text' : ''}>{node.module}</span>
         {node.instance && <span className="secondary">{node.instance}</span>}
       </div>
-      {open && node.children.map((c, i) => <HierarchyRow key={`${c.instance}-${i}`} node={c} depth={depth + 1} />)}
+      {open &&
+        node.children.map((c, i) => (
+          <HierarchyRow key={`${c.instance}-${i}`} node={c} depth={depth + 1} path={c.instance ? [...path, c.instance] : path} showMenu={showMenu} />
+        ))}
     </>
   );
 }
@@ -38,7 +57,8 @@ function FileRow({ rel, active, onOpen }: { rel: string; active: boolean; onOpen
 export function ProjectNavigator() {
   const project = useStore((s) => s.project);
   const tab = useStore((s) => s.navigatorTab);
-  const hierarchy = useStore((s) => s.analysis?.hierarchy);
+  const hierarchy = useStore((s) => s.hierarchy);
+  const [contextMenu, showMenu] = useContextMenu();
   const active = useStore((s) => s.active);
   const setTab = (t: 'hierarchy' | 'files') => store.set({ navigatorTab: t });
 
@@ -59,7 +79,11 @@ export function ProjectNavigator() {
         {project && tab === 'hierarchy' && (
           <>
             <div className="tree-group">Entity: {project.project.name}</div>
-            {hierarchy ? <HierarchyRow node={hierarchy} depth={0} /> : <div className="empty">Run Analysis to see the module hierarchy.</div>}
+            {hierarchy ? (
+              <HierarchyRow node={hierarchy} depth={0} path={[]} showMenu={showMenu} />
+            ) : (
+              <div className="empty">{project.project.designFiles.length ? 'Reading the design files...' : 'Add design files to see the module hierarchy.'}</div>
+            )}
           </>
         )}
         {project && tab === 'files' && (
@@ -75,6 +99,7 @@ export function ProjectNavigator() {
           </>
         )}
       </div>
+      {contextMenu}
     </div>
   );
 }

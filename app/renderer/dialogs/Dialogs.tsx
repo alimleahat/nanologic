@@ -651,6 +651,7 @@ function AboutDialog() {
           Includes Yosys (ISC licence) and Icarus Verilog (GNU GPL v2 or later), both compiled to WebAssembly and run as separate programs. Source code
           for Icarus Verilog is available from the location given in the licence notes shipped with the app.
         </p>
+        <p>The RTL Viewer lays out schematics with elkjs (Eclipse Public License 2.0), unmodified; its source is at github.com/kieler/elkjs.</p>
         <p className="secondary">
           Not affiliated with Intel, Terasic, AMD/Xilinx or Digilent. Quartus is a trademark of Intel Corporation; Vivado is a trademark of AMD.
         </p>

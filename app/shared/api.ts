@@ -4,6 +4,7 @@ import type { BoardInputs, BoardOutputLevels, BoardWiringReport, DisplayFrame } 
 import type { SimNetInfo } from './netsim/compile';
 import type { Message } from './messages';
 import type { ExportLevel, NanoLogicProject } from './project';
+import type { RtlMode, RtlNetlistResult } from './rtl/netlist';
 import type { AnalysisResult, SimulationResult, TopPort } from './toolTypes';
 
 export interface OpenedProject {
@@ -95,6 +96,8 @@ export interface NanoLogicApi {
   pickSourceFiles(projectDir: string): Promise<string[]>;
 
   analyse(projectDir: string, project: NanoLogicProject, unsaved: Record<string, string>): Promise<AnalysisResult>;
+  /** Netlist for the RTL Viewer (RTL or gate-only view), hierarchy kept. */
+  rtlNetlist(projectDir: string, project: NanoLogicProject, mode: RtlMode, unsaved: Record<string, string>): Promise<RtlNetlistResult>;
   simulate(
     projectDir: string,
     project: NanoLogicProject,
